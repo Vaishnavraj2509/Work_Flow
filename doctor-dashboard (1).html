@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SmartCare – Doctor Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --blue-dark:  #0d3880;
+    --blue-mid:   #1565c0;
+    --blue:       #1e88e5;
+    --blue-light: #42a5f5;
+    --blue-bg:    #e8f0fe;
+    --white:      #ffffff;
+    --bg:         #f0f5ff;
+    --text:       #1a2540;
+    --muted:      #64748b;
+    --border:     #e2e8f0;
+    --green:      #22c55e;
+    --green-bg:   #dcfce7;
+    --orange:     #f59e0b;
+    --orange-bg:  #fef3c7;
+    --red:        #ef4444;
+    --red-bg:     #fee2e2;
+    --purple:     #8b5cf6;
+    --purple-bg:  #ede9fe;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+  h1, h2, h3 { font-family: 'Playfair Display', serif; }
+  svg { display: inline-block; vertical-align: middle; }
+
+  @keyframes fadeUp   { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes slideIn  { from { opacity:0; transform:scale(.94) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+  @keyframes pulse    { 0%,100% { box-shadow:0 0 0 0 rgba(34,197,94,.6); } 70% { box-shadow:0 0 0 9px rgba(34,197,94,0); } }
+  @keyframes dotPulse { 0%,80%,100% { transform:scale(0); } 40% { transform:scale(1); } }
+  @keyframes barFill  { from { width:0; } to { width:var(--target-width, 60%); } }
+  @keyframes spin     { to { transform: rotate(360deg); } }
+  @keyframes tickPulse{ 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* ── LAYOUT ── */
+  #app { display: flex; min-height: 100vh; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 250px; min-height: 100vh; flex-shrink: 0;
+    background: linear-gradient(180deg, #0d3880 0%, #1565c0 100%);
+    display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .sb-brand {
+    padding: 26px 22px 18px;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .sb-brand-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: rgba(255,255,255,.15);
+    display: flex; align-items: center; justify-content: center; flex-shrink:0;
+  }
+  .sb-brand-name { font-family: 'Playfair Display', serif; color: #fff; font-size: 17px; font-weight: 700; line-height:1.1; }
+  .sb-brand-sub  { color: rgba(255,255,255,.45); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; }
+
+  .sb-doctor {
+    padding: 18px 22px; border-bottom: 1px solid rgba(255,255,255,.08);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .sb-avatar {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: linear-gradient(135deg, #42a5f5, var(--blue)); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: #fff; font-size: 16px;
+    border: 2px solid rgba(255,255,255,.3);
+    position: relative;
+  }
+  .sb-online-dot {
+    position: absolute; bottom: 1px; right: 1px;
+    width: 11px; height: 11px; border-radius: 50%;
+    background: var(--green); border: 2px solid #1565c0;
+    animation: pulse 2s infinite;
+  }
+  .sb-name  { color: #fff; font-weight: 600; font-size: 14px; }
+  .sb-dept  { color: rgba(255,255,255,.55); font-size: 12px; margin-top: 1px; }
+  .sb-status-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(34,197,94,.18); border: 1px solid rgba(34,197,94,.35);
+    border-radius: 999px; padding: 3px 9px; font-size: 11px; color: #86efac; font-weight: 600; margin-top: 4px;
+  }
+
+  .sb-nav { flex: 1; padding: 14px 14px; }
+  .sb-section { font-size: 10px; color: rgba(255,255,255,.35); letter-spacing: 1.5px; text-transform: uppercase; padding: 0 8px; margin: 12px 0 6px; }
+  .sb-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border-radius: 12px; color: rgba(255,255,255,.65);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all .2s; margin-bottom: 2px; user-select: none;
+  }
+  .sb-item:hover { background: rgba(255,255,255,.1); color: #fff; }
+  .sb-item.active { background: rgba(255,255,255,.18); color: #fff; font-weight: 600; }
+  .sb-item .sb-icon { width: 18px; text-align: center; flex-shrink:0; }
+  .sb-badge {
+    margin-left: auto; background: var(--red); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; min-width: 20px; text-align:center;
+  }
+  .sb-badge.green { background: var(--green); }
+  .sb-footer {
+    padding: 16px 14px;
+    border-top: 1px solid rgba(255,255,255,.08);
+  }
+  .availability-toggle {
+    background: rgba(255,255,255,.08); border-radius: 14px; padding: 14px 16px;
+    border: 1px solid rgba(255,255,255,.12);
+  }
+  .avail-label { color: rgba(255,255,255,.55); font-size: 11px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  .toggle-row { display: flex; align-items: center; gap: 10px; }
+  .toggle-text { color: #fff; font-size: 13px; font-weight: 600; flex:1; }
+  .toggle-switch {
+    width: 44px; height: 24px; border-radius: 999px; cursor: pointer;
+    background: var(--green); position: relative; transition: background .3s; flex-shrink:0;
+  }
+  .toggle-switch.off { background: #475569; }
+  .toggle-switch::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 50%; background: #fff;
+    transition: transform .3s; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  }
+  .toggle-switch.off::after { transform: translateX(0); }
+  .toggle-switch:not(.off)::after { transform: translateX(20px); }
+
+  /* ── MAIN CONTENT ── */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: #fff; padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(30,80,200,.06);
+  }
+  .topbar-left h2 { font-size: 22px; color: var(--text); margin-bottom: 2px; }
+  .topbar-left p  { font-size: 13px; color: var(--muted); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .date-chip {
+    display: flex; align-items: center; gap: 9px;
+    background: var(--bg); padding: 9px 16px; border-radius: 12px;
+    font-size: 13px; color: #475569; border: 1px solid var(--border);
+  }
+  .topbar-icon-btn {
+    width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border);
+    background: #fff; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative; transition: background .2s;
+  }
+  .topbar-icon-btn:hover { background: var(--bg); }
+  .notif-dot {
+    position: absolute; top: 6px; right: 7px;
+    width: 8px; height: 8px; border-radius: 50%; background: var(--red);
+    border: 1.5px solid #fff;
+  }
+  .refresh-btn {
+    display: flex; align-items: center; gap: 7px;
+    background: linear-gradient(135deg, var(--blue-mid), var(--blue));
+    color: #fff; border: none; border-radius: 11px; padding: 9px 18px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .2s; box-shadow: 0 3px 12px rgba(30,136,229,.3);
+  }
+  .refresh-btn:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(30,136,229,.4); }
+  .refresh-btn.spinning svg { animation: spin .8s linear infinite; }
+
+  /* ── CONTENT AREA ── */
+  .content { padding: 24px 28px; flex: 1; }
+
+  /* ── STAT CARDS ── */
+  .cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 24px; }
+  .stat-card {
+    background: #fff; border-radius: 18px; padding: 22px;
+    box-shadow: 0 4px 20px rgba(30,80,200,.08);
+    border: 1px solid rgba(30,136,229,.08);
+    animation: fadeUp .5s ease forwards; opacity: 0;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(30,80,200,.13); }
+  .stat-card:nth-child(1){animation-delay:.05s}
+  .stat-card:nth-child(2){animation-delay:.12s}
+  .stat-card:nth-child(3){animation-delay:.18s}
+  .stat-card:nth-child(4){animation-delay:.25s}
+  .sc-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .sc-label{ font-size: 13px; color: var(--muted); font-weight: 500; }
+  .sc-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .sc-val  { font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 3px; line-height: 1; }
+  .sc-sub  { font-size: 12px; color: #94a3b8; display: flex; align-items: center; gap: 4px; }
+  .trend-up   { color: var(--green); font-weight: 600; }
+  .trend-down { color: var(--red); font-weight: 600; }
+
+  /* ── MID ROW ── */
+  .mid-row { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; margin-bottom: 22px; }
+  .panel {
+    background: #fff; border-radius: 18px; padding: 24px;
+    box-shadow: 0 4px 20px rgba(30,80,200,.08);
+    border: 1px solid rgba(30,136,229,.08);
+    animation: fadeUp .5s .3s ease forwards; opacity: 0;
+  }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .panel-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text); }
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--green); font-weight: 700;
+  }
+  .live-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+    animation: tickPulse 1.4s infinite;
+  }
+
+  /* ── QUEUE TABLE ── */
+  .queue-table { width: 100%; border-collapse: collapse; }
+  .queue-table th {
+    text-align: left; font-size: 11px; font-weight: 600; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: .8px; padding: 0 12px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .queue-table td { padding: 13px 12px; border-bottom: 1px solid #f8faff; font-size: 13px; }
+  .queue-table tr:last-child td { border-bottom: none; }
+  .queue-table tr:hover td { background: #fafcff; }
+  .pt-num { font-weight: 700; color: var(--blue); font-size: 14px; }
+  .pt-name { font-weight: 600; color: var(--text); }
+  .pt-age  { color: var(--muted); font-size: 12px; }
+  .time-tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--blue-bg); color: var(--blue-mid);
+    padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;
+  }
+  .q-status {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+  }
+  .q-status.waiting   { background: var(--orange-bg); color: #b45309; }
+  .q-status.current   { background: var(--green-bg);  color: #15803d; }
+  .q-status.completed { background: #f1f5f9; color: #64748b; }
+  .q-status.urgent    { background: var(--red-bg); color: #dc2626; }
+  .action-row { display: flex; gap: 6px; }
+  .btn-sm {
+    padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; transition: all .15s;
+  }
+  .btn-sm.primary { background: var(--blue); color: #fff; }
+  .btn-sm.primary:hover { background: var(--blue-mid); }
+  .btn-sm.success { background: var(--green-bg); color: #15803d; border: 1px solid #86efac; }
+  .btn-sm.success:hover { background: #bbf7d0; }
+  .btn-sm.danger  { background: var(--red-bg); color: #dc2626; border: 1px solid #fca5a5; }
+  .btn-sm.danger:hover  { background: #fecaca; }
+
+  /* ── CURRENT PATIENT CARD ── */
+  .current-patient-card {
+    border: 2px solid rgba(30,136,229,.15); border-radius: 16px;
+    padding: 18px; background: linear-gradient(135deg, #f0f7ff, #e8f0fe);
+    margin-bottom: 16px;
+  }
+  .cp-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .cp-avatar {
+    width: 48px; height: 48px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--blue-mid), var(--blue));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: #fff; font-size: 18px; flex-shrink: 0;
+  }
+  .cp-name { font-weight: 700; font-size: 16px; color: var(--text); }
+  .cp-meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .cp-in-badge {
+    margin-left: auto; background: var(--green-bg); color: #15803d;
+    border: 1px solid #86efac; border-radius: 999px; padding: 4px 12px;
+    font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px;
+  }
+  .cp-vitals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .vital-chip {
+    background: #fff; border-radius: 12px; padding: 10px;
+    border: 1px solid var(--border); text-align: center;
+  }
+  .vital-val   { font-size: 15px; font-weight: 700; color: var(--text); }
+  .vital-label { font-size: 10px; color: #94a3b8; margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+  .cp-actions { display: flex; gap: 8px; }
+  .btn-done {
+    flex: 1; padding: 10px; background: linear-gradient(135deg, var(--green), #16a34a);
+    color: #fff; border: none; border-radius: 11px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 3px 12px rgba(34,197,94,.35); transition: all .2s;
+  }
+  .btn-done:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(34,197,94,.45); }
+  .btn-next {
+    padding: 10px 18px; background: var(--blue-bg); color: var(--blue-mid);
+    border: 1.5px solid rgba(30,136,229,.25); border-radius: 11px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all .2s;
+  }
+  .btn-next:hover { background: #dbeafe; }
+
+  /* ── WAIT TIME BARS ── */
+  .wait-bar-row { margin-bottom: 12px; }
+  .wait-bar-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; }
+  .wait-bar-name  { color: var(--text); font-weight: 500; }
+  .wait-bar-time  { color: var(--blue); font-weight: 700; }
+  .wait-track { height: 7px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+  .wait-fill {
+    height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--blue-mid), var(--blue-light));
+    animation: barFill 1.2s ease forwards; width: 0;
+  }
+
+  /* ── BOTTOM ROW ── */
+  .bottom-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 22px; }
+  .panel.anim2 { animation-delay: .38s; }
+  .panel.anim3 { animation-delay: .45s; }
+
+  /* ── APPOINTMENT LIST ── */
+  .appt-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 0; border-bottom: 1px solid #f1f5f9;
+  }
+  .appt-item:last-child { border-bottom: none; }
+  .appt-time-badge {
+    background: var(--blue-bg); color: var(--blue-mid);
+    padding: 5px 10px; border-radius: 9px; font-size: 11px; font-weight: 700;
+    flex-shrink: 0; min-width: 60px; text-align: center;
+  }
+  .appt-info { flex: 1; min-width: 0; }
+  .appt-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .appt-reason { font-size: 11px; color: var(--muted); }
+  .appt-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .dot-green   { background: var(--green); }
+  .dot-orange  { background: var(--orange); }
+  .dot-red     { background: var(--red); }
+  .dot-gray    { background: #cbd5e1; }
+  .dot-blue    { background: var(--blue); }
+
+  /* ── PERFORMANCE RING ── */
+  .perf-ring-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 0; }
+  .ring-svg { transform: rotate(-90deg); margin-bottom: 12px; }
+  .ring-track { fill: none; stroke: #f1f5f9; stroke-width: 10; }
+  .ring-fill {
+    fill: none; stroke-width: 10; stroke-linecap: round;
+    stroke-dasharray: 282; stroke-dashoffset: 282;
+    transition: stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1);
+  }
+  .ring-fill.green  { stroke: var(--green); }
+  .ring-fill.blue   { stroke: var(--blue); }
+  .ring-fill.orange { stroke: var(--orange); }
+  .perf-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 6px; }
+  .perf-stat  {
+    background: var(--bg); border-radius: 11px; padding: 10px;
+    text-align: center; border: 1px solid var(--border);
+  }
+  .ps-val   { font-size: 16px; font-weight: 700; color: var(--text); }
+  .ps-label { font-size: 10px; color: #94a3b8; margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* ── RECENT NOTES ── */
+  .note-item { padding: 11px 0; border-bottom: 1px solid #f1f5f9; }
+  .note-item:last-child { border-bottom: none; }
+  .note-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .note-patient { font-size: 13px; font-weight: 600; color: var(--text); }
+  .note-time    { font-size: 11px; color: #94a3b8; }
+  .note-text    { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .note-tag {
+    display: inline-flex; margin-top: 5px;
+    padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600;
+  }
+  .tag-general   { background: var(--blue-bg);    color: var(--blue-mid); }
+  .tag-follow-up { background: var(--orange-bg);  color: #92400e; }
+  .tag-urgent    { background: var(--red-bg);     color: #dc2626; }
+  .tag-review    { background: var(--purple-bg);  color: #6d28d9; }
+
+  /* ── ALERT BANNER ── */
+  .alert-banner {
+    background: linear-gradient(135deg, var(--blue-mid), var(--blue));
+    border-radius: 16px; padding: 16px 22px;
+    display: flex; align-items: center; gap: 16px;
+    animation: fadeUp .5s .5s ease forwards; opacity: 0;
+    margin-bottom: 22px;
+  }
+  .banner-icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(255,255,255,.15); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .banner-title { color: #fff; font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+  .banner-sub   { color: rgba(255,255,255,.72); font-size: 13px; }
+  .queue-chip {
+    margin-left: auto; flex-shrink: 0;
+    background: rgba(255,255,255,.15); border-radius: 12px;
+    padding: 10px 18px; text-align: center;
+  }
+  .qc-num { color: #fff; font-weight: 700; font-size: 22px; }
+  .qc-lbl { color: rgba(255,255,255,.68); font-size: 11px; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(10,20,60,.56);
+    backdrop-filter: blur(5px); display: none;
+    align-items: center; justify-content: center; z-index: 200;
+  }
+  .modal-overlay.open { display: flex; animation: fadeUp .3s ease; }
+  .modal {
+    background: #fff; border-radius: 24px; padding: 36px;
+    width: 520px; max-width: 95vw;
+    box-shadow: 0 30px 80px rgba(0,0,0,.22);
+    animation: slideIn .4s cubic-bezier(.16,1,.3,1);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--text); margin-bottom: 4px; }
+  .modal-sub   { color: var(--muted); font-size: 14px; margin-bottom: 22px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px; }
+  .input {
+    width: 100%; padding: 11px 14px;
+    border: 1.5px solid var(--border); border-radius: 11px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text);
+    outline: none; background: #f8faff; transition: all .2s; margin-bottom: 14px;
+  }
+  .input:focus { border-color: var(--blue); background: #fff; box-shadow: 0 0 0 4px rgba(30,136,229,.1); }
+  select.input { cursor: pointer; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 6px; }
+  .btn-modal-cancel {
+    flex: 1; padding: 12px; background: #fff; color: var(--muted);
+    border: 1.5px solid var(--border); border-radius: 11px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background .2s;
+  }
+  .btn-modal-cancel:hover { background: var(--bg); }
+  .btn-modal-save {
+    flex: 2; padding: 12px;
+    background: linear-gradient(135deg, var(--blue-mid), var(--blue));
+    color: #fff; border: none; border-radius: 11px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 14px rgba(30,136,229,.35); transition: all .2s;
+  }
+  .btn-modal-save:hover { transform: translateY(-1px); }
+  .info-note {
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 18px; font-size: 12px; color: #92400e; line-height: 1.5;
+  }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 28px; right: 28px; z-index: 999;
+    background: var(--text); color: #fff;
+    padding: 12px 20px; border-radius: 12px;
+    font-size: 13px; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,.2);
+    display: flex; align-items: center; gap: 10px;
+    transform: translateY(80px); opacity: 0;
+    transition: all .35s cubic-bezier(.16,1,.3,1);
+    max-width: 340px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.green { background: #15803d; }
+  .toast.red   { background: #dc2626; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state { text-align: center; padding: 32px 16px; color: #94a3b8; }
+  .empty-state svg { margin-bottom: 10px; opacity: .5; }
+  .empty-state p { font-size: 13px; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- ════ SIDEBAR ════ -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="48" y="23" width="26" height="76" rx="9"/>
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <div>
+        <div class="sb-brand-name">SmartCare</div>
+        <div class="sb-brand-sub">Hospital System</div>
+      </div>
+    </div>
+
+    <div class="sb-doctor">
+      <div class="sb-avatar" id="sbAvatar">
+        <span id="sbAvatarInitials">–</span>
+        <div class="sb-online-dot"></div>
+      </div>
+      <div>
+        <div class="sb-name" id="sbName">Loading…</div>
+        <div class="sb-dept" id="sbDept">–</div>
+        <div class="sb-status-badge">
+          <div class="live-dot" style="width:6px;height:6px;"></div>
+          On Duty
+        </div>
+      </div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-section">Main</div>
+      <div class="sb-item active" onclick="setSbActive(this)">
+        <span class="sb-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </span>
+        Dashboard
+      </div>
+      <div class="sb-item" onclick="setSbActive(this)">
+        <span class="sb-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+        </span>
+        Queue
+        <span class="sb-badge" id="sbQueueCount">–</span>
+      </div>
+      <div class="sb-item" onclick="setSbActive(this)">
+        <span class="sb-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </span>
+        Appointments
+      </div>
+      <div class="sb-item" onclick="setSbActive(this)">
+        <span class="sb-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </span>
+        Patients
+        <span class="sb-badge green" id="sbPatientCount">–</span>
+      </div>
+
+      <div class="sb-section">Clinical</div>
+      <div class="sb-item" onclick="setSbActive(this)">
+        <span class="sb-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </span>
+        Prescriptions
+      </div>
+      <div class="sb-item" onclick="setSbActive(this)">
+        <span class="sb-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </span>
+        Vitals & Labs
+      </div>
+      <div class="sb-item" onclick="setSbActive(this)">
+        <span class="sb-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </span>
+        Consultations
+      </div>
+
+      <div class="sb-section">Account</div>
+      <div class="sb-item" onclick="setSbActive(this)">
+        <span class="sb-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </span>
+        Settings
+      </div>
+    </nav>
+
+    <div class="sb-footer">
+      <div class="availability-toggle">
+        <div class="avail-label">Availability</div>
+        <div class="toggle-row">
+          <span class="toggle-text" id="toggleText">Available</span>
+          <div class="toggle-switch" id="availToggle" onclick="toggleAvailability()"></div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ════ MAIN ════ -->
+  <div class="main">
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h2>Doctor Dashboard</h2>
+        <p id="topbarSubtitle">Loading session…</p>
+      </div>
+      <div class="topbar-right">
+        <div class="date-chip">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span id="dateDisplay">–</span>
+        </div>
+        <div class="topbar-icon-btn" title="Notifications">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <div class="notif-dot"></div>
+        </div>
+        <button class="refresh-btn" id="refreshBtn" onclick="refreshData()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          Refresh
+        </button>
+        <button class="refresh-btn" style="background:linear-gradient(135deg,#15803d,var(--green))" onclick="openAddNoteModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Note
+        </button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- STAT CARDS -->
+      <div class="cards-row" id="statsRow">
+        <div class="stat-card">
+          <div class="sc-head">
+            <div class="sc-label">Today's Patients</div>
+            <div class="sc-icon" style="background:#e8f0fe">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1565c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+          </div>
+          <div class="sc-val" id="statTotal">–</div>
+          <div class="sc-sub"><span class="trend-up" id="statTotalTrend">–</span> vs yesterday</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-head">
+            <div class="sc-label">Completed</div>
+            <div class="sc-icon" style="background:#dcfce7">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          <div class="sc-val" id="statCompleted">–</div>
+          <div class="sc-sub" id="statCompletedPct">–% of total</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-head">
+            <div class="sc-label">Waiting in Queue</div>
+            <div class="sc-icon" style="background:#fef3c7">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+          <div class="sc-val" id="statWaiting">–</div>
+          <div class="sc-sub">Avg wait: <span id="statAvgWait" style="font-weight:600;color:var(--orange)">–</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-head">
+            <div class="sc-label">Avg Consult Time</div>
+            <div class="sc-icon" style="background:#ede9fe">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+          </div>
+          <div class="sc-val" id="statConsultTime">–</div>
+          <div class="sc-sub"><span class="trend-down" id="statConsultTrend">–</span> vs last week</div>
+        </div>
+      </div>
+
+      <!-- ALERT BANNER -->
+      <div class="alert-banner" id="alertBanner">
+        <div class="banner-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="white"/><circle cx="3" cy="12" r="1" fill="white"/><circle cx="3" cy="18" r="1" fill="white"/></svg>
+        </div>
+        <div>
+          <div class="banner-title" id="bannerTitle">FCFS Queue Active</div>
+          <div class="banner-sub" id="bannerSub">Patients assigned automatically via first-come-first-served algorithm.</div>
+        </div>
+        <div class="queue-chip">
+          <div class="qc-num" id="bannerQueueNum">–</div>
+          <div class="qc-lbl">in queue</div>
+        </div>
+      </div>
+
+      <!-- MID ROW: Queue Table + Current Patient -->
+      <div class="mid-row">
+
+        <!-- Queue Table -->
+        <div class="panel">
+          <div class="panel-header">
+            <h3 class="panel-title">Today's Queue</h3>
+            <div class="live-badge"><div class="live-dot"></div> Live</div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="queue-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Patient</th>
+                  <th>Time Slot</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="queueTableBody">
+                <tr><td colspan="6"><div class="empty-state"><p>Loading queue…</p></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Current Patient + Wait Times -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <!-- Current Patient -->
+          <div class="panel" style="animation-delay:.2s">
+            <div class="panel-header">
+              <h3 class="panel-title">Current Patient</h3>
+              <div class="live-badge"><div class="live-dot"></div> In Room</div>
+            </div>
+            <div id="currentPatientSection">
+              <div class="empty-state">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <p>No patient currently</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wait Time Bars -->
+          <div class="panel" style="animation-delay:.28s">
+            <div class="panel-header">
+              <h3 class="panel-title">Wait Times</h3>
+            </div>
+            <div id="waitTimeBars">
+              <p style="font-size:13px;color:#94a3b8">Loading…</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM ROW -->
+      <div class="bottom-row">
+        <!-- Upcoming Appointments -->
+        <div class="panel anim2">
+          <div class="panel-header">
+            <h3 class="panel-title">Upcoming</h3>
+            <span style="font-size:12px;color:var(--muted);font-weight:500" id="upcomingCount">–</span>
+          </div>
+          <div id="upcomingList">
+            <p style="font-size:13px;color:#94a3b8">Loading…</p>
+          </div>
+        </div>
+
+        <!-- Performance Ring -->
+        <div class="panel anim2" style="animation-delay:.42s">
+          <div class="panel-header">
+            <h3 class="panel-title">Performance</h3>
+          </div>
+          <div class="perf-ring-wrap">
+            <svg class="ring-svg" width="100" height="100" viewBox="0 0 100 100">
+              <circle class="ring-track" cx="50" cy="50" r="45"/>
+              <circle class="ring-fill green" id="perfRing" cx="50" cy="50" r="45"/>
+            </svg>
+            <div style="text-align:center;margin-top:-8px;margin-bottom:16px">
+              <div style="font-size:22px;font-weight:700;color:var(--text)" id="perfPct">–%</div>
+              <div style="font-size:12px;color:var(--muted)">Patient Satisfaction</div>
+            </div>
+            <div class="perf-stats">
+              <div class="perf-stat">
+                <div class="ps-val" id="perfOnTime">–</div>
+                <div class="ps-label">On Time</div>
+              </div>
+              <div class="perf-stat">
+                <div class="ps-val" id="perfUrgent">–</div>
+                <div class="ps-label">Urgent</div>
+              </div>
+              <div class="perf-stat">
+                <div class="ps-val" id="perfReturning">–</div>
+                <div class="ps-label">Returning</div>
+              </div>
+              <div class="perf-stat">
+                <div class="ps-val" id="perfNewPt">–</div>
+                <div class="ps-label">New Pts</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Notes -->
+        <div class="panel anim3">
+          <div class="panel-header">
+            <h3 class="panel-title">Recent Notes</h3>
+            <span onclick="openAddNoteModal()" style="font-size:12px;color:var(--blue);font-weight:600;cursor:pointer">+ Add</span>
+          </div>
+          <div id="notesList">
+            <p style="font-size:13px;color:#94a3b8">Loading…</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ════ ADD NOTE MODAL ════ -->
+<div class="modal-overlay" id="noteModal">
+  <div class="modal">
+    <h3 class="modal-title">Add Clinical Note</h3>
+    <p class="modal-sub">Attach a note to a patient's record</p>
+    <div class="info-note">Notes are saved to the patient's EMR and visible to attending staff.</div>
+    <div class="two-col">
+      <div>
+        <label>Patient Name</label>
+        <input class="input" id="notePatient" placeholder="e.g. Rahul Sharma" />
+      </div>
+      <div>
+        <label>Category</label>
+        <select class="input" id="noteCategory">
+          <option>General</option>
+          <option>Follow-Up</option>
+          <option>Urgent</option>
+          <option>Review</option>
+        </select>
+      </div>
+    </div>
+    <label>Note</label>
+    <textarea class="input" id="noteText" rows="4" style="resize:vertical" placeholder="Write clinical observations, diagnosis, or instructions…"></textarea>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeNoteModal()">Cancel</button>
+      <button class="btn-modal-save" onclick="saveNote()">Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ COMPLETE PATIENT MODAL ════ -->
+<div class="modal-overlay" id="completeModal">
+  <div class="modal">
+    <h3 class="modal-title">Complete Consultation</h3>
+    <p class="modal-sub" id="completeModalSub">Record outcome and call next patient</p>
+    <div class="two-col">
+      <div>
+        <label>Diagnosis</label>
+        <input class="input" id="completeDiagnosis" placeholder="e.g. Viral fever" />
+      </div>
+      <div>
+        <label>Follow-Up Required?</label>
+        <select class="input" id="completeFollowUp">
+          <option>No</option>
+          <option>Yes – 1 week</option>
+          <option>Yes – 2 weeks</option>
+          <option>Yes – 1 month</option>
+        </select>
+      </div>
+    </div>
+    <label>Prescription / Instructions</label>
+    <textarea class="input" id="completePrescription" rows="3" style="resize:vertical" placeholder="Medications, dosage, lifestyle instructions…"></textarea>
+    <label>Consultation Notes</label>
+    <textarea class="input" id="completeNotes" rows="3" style="resize:vertical" placeholder="Additional notes for record…"></textarea>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="closeCompleteModal()">Cancel</button>
+      <button class="btn-modal-save" style="background:linear-gradient(135deg,#15803d,var(--green))" onclick="confirmComplete()">✓ Complete & Call Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  DATA LAYER – all state, no hardcoded UI text
+// ══════════════════════════════════════════════════
+const DOCTOR = {
+  name: 'Dr. Anita Sharma',
+  dept: 'General Medicine',
+  initials: 'AS',
+  room: 'OPD – Room 4',
+  experience: '12 yrs'
+};
+
+const PATIENTS_POOL = [
+  { name:'Rahul Sharma',    age:34, gender:'M', reason:'Fever & Headache',        priority:'normal' },
+  { name:'Priya Mehta',     age:27, gender:'F', reason:'Routine Check-up',         priority:'normal' },
+  { name:'Arjun Patel',     age:52, gender:'M', reason:'Chest Pain',              priority:'urgent' },
+  { name:'Sunita Rao',      age:41, gender:'F', reason:'Diabetes Follow-up',       priority:'normal' },
+  { name:'Kiran Joshi',     age:19, gender:'M', reason:'Skin Rash',               priority:'normal' },
+  { name:'Deepa Nair',      age:63, gender:'F', reason:'Hypertension Review',      priority:'normal' },
+  { name:'Vivek Kumar',     age:45, gender:'M', reason:'Back Pain',               priority:'normal' },
+  { name:'Meena Iyer',      age:31, gender:'F', reason:'Thyroid Check',            priority:'normal' },
+  { name:'Suresh Reddy',    age:58, gender:'M', reason:'Shortness of Breath',     priority:'urgent' },
+  { name:'Anjali Singh',    age:24, gender:'F', reason:'Migraine',                priority:'normal' },
+  { name:'Raj Chopra',      age:70, gender:'M', reason:'Knee Pain',               priority:'normal' },
+  { name:'Neha Verma',      age:36, gender:'F', reason:'Pregnancy Check-up',       priority:'normal' },
+];
+
+const SLOT_TIMES = [
+  '09:00','09:30','10:00','10:30','11:00','11:30',
+  '12:00','12:30','14:00','14:30','15:00','15:30'
+];
+
+const VITALS_POOL = [
+  { bp:'118/76', hr:'72 bpm', temp:'98.4°F' },
+  { bp:'130/85', hr:'88 bpm', temp:'99.2°F' },
+  { bp:'145/92', hr:'96 bpm', temp:'100.1°F' },
+  { bp:'110/70', hr:'64 bpm', temp:'98.6°F' },
+  { bp:'122/80', hr:'78 bpm', temp:'98.8°F' },
+];
+
+const NOTE_TEMPLATES = [
+  { text: 'Presented with moderate fever for 3 days. Advised CBC and prescribed paracetamol 500mg.', tag: 'general' },
+  { text: 'Blood pressure slightly elevated. Lifestyle modification recommended. Follow-up in 2 weeks.', tag: 'follow-up' },
+  { text: 'Chest X-ray normal. ECG shows mild tachycardia. Referred to cardiology for further evaluation.', tag: 'urgent' },
+  { text: 'Routine check-up completed. All parameters within normal range. Annual review scheduled.', tag: 'review' },
+  { text: 'Diabetic patient – HbA1c at 7.4%. Adjusted metformin dosage. Dietary counseling given.', tag: 'follow-up' },
+];
+
+// ── App State ──
+const state = {
+  queue: [],
+  completed: [],
+  notes: [],
+  currentPatientIdx: null,
+  available: true,
+  totalToday: 0,
+  pendingCompleteIdx: null,
+  stats: {
+    avgWait: 0,
+    consultTime: 0,
+    satisfaction: 0,
+    onTime: 0,
+    urgent: 0,
+    returning: 0,
+    newPt: 0
+  }
+};
+
+// ── Initialize ──
+function init() {
+  // Doctor info
+  document.getElementById('sbName').textContent = DOCTOR.name;
+  document.getElementById('sbDept').textContent = DOCTOR.dept;
+  document.getElementById('sbAvatarInitials').textContent = DOCTOR.initials;
+  document.getElementById('topbarSubtitle').textContent = `${DOCTOR.dept} · ${DOCTOR.room}`;
+
+  // Date
+  const now = new Date();
+  document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-IN', {
+    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+  });
+
+  // Build queue
+  const count = 10 + Math.floor(Math.random() * 3);
+  const shuffled = [...PATIENTS_POOL].sort(() => Math.random() - .5).slice(0, count);
+  const completedCount = 2 + Math.floor(Math.random() * 3);
+
+  state.queue = shuffled.map((p, i) => ({
+    ...p,
+    slot: SLOT_TIMES[i] || '16:00',
+    vitals: VITALS_POOL[Math.floor(Math.random() * VITALS_POOL.length)],
+    status: i < completedCount ? 'completed' : (i === completedCount ? 'current' : 'waiting'),
+    qNum: i + 1
+  }));
+  state.currentPatientIdx = completedCount;
+  state.completed = state.queue.filter(p => p.status === 'completed');
+  state.totalToday = count;
+
+  // Stats
+  state.stats = {
+    avgWait: 18 + Math.floor(Math.random() * 14),
+    consultTime: 12 + Math.floor(Math.random() * 8),
+    satisfaction: 88 + Math.floor(Math.random() * 10),
+    onTime: Math.floor((state.completed.length / Math.max(state.totalToday, 1)) * 100),
+    urgent: state.queue.filter(p => p.priority === 'urgent').length,
+    returning: 3 + Math.floor(Math.random() * 4),
+    newPt: state.queue.filter(p => p.status !== 'completed').length
+  };
+
+  // Notes
+  state.notes = NOTE_TEMPLATES.slice(0, 3).map((n, i) => ({
+    ...n,
+    patient: PATIENTS_POOL[i].name,
+    time: `${Math.floor(Math.random() * 2) + 8}:${['00','15','30','45'][Math.floor(Math.random()*4)]} AM`
+  }));
+
+  render();
+}
+
+// ── Main Render ──
+function render() {
+  renderStats();
+  renderBanner();
+  renderQueueTable();
+  renderCurrentPatient();
+  renderWaitTimes();
+  renderUpcoming();
+  renderPerformance();
+  renderNotes();
+  renderSidebarBadges();
+}
+
+function renderStats() {
+  const completed = state.queue.filter(p => p.status === 'completed').length;
+  const waiting   = state.queue.filter(p => p.status === 'waiting').length;
+  const pct = Math.round((completed / Math.max(state.totalToday, 1)) * 100);
+  const trend = `+${1 + Math.floor(Math.random() * 3)}`;
+
+  document.getElementById('statTotal').textContent = state.totalToday;
+  document.getElementById('statTotalTrend').textContent = trend;
+  document.getElementById('statCompleted').textContent = completed;
+  document.getElementById('statCompletedPct').textContent = `${pct}% of total`;
+  document.getElementById('statWaiting').textContent = waiting;
+  document.getElementById('statAvgWait').textContent = `${state.stats.avgWait} min`;
+  document.getElementById('statConsultTime').textContent = `${state.stats.consultTime} min`;
+  document.getElementById('statConsultTrend').textContent = `-2 min`;
+  document.querySelector('#statsRow .stat-card:nth-child(4) .sc-sub .trend-down').style.color = 'var(--green)';
+}
+
+function renderBanner() {
+  const waiting = state.queue.filter(p => p.status === 'waiting').length;
+  document.getElementById('bannerQueueNum').textContent = waiting;
+  document.getElementById('bannerTitle').textContent = 'FCFS Queue System Active';
+  document.getElementById('bannerSub').textContent =
+    `${state.queue.filter(p=>p.status==='completed').length} patients seen · ${waiting} waiting · Avg. ${state.stats.avgWait} min wait`;
+}
+
+function renderQueueTable() {
+  const tbody = document.getElementById('queueTableBody');
+  if (!state.queue.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>No patients today</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = state.queue.map((p, i) => {
+    let statusHtml = '';
+    if (p.status === 'completed') {
+      statusHtml = `<span class="q-status completed">✓ Done</span>`;
+    } else if (p.status === 'current') {
+      statusHtml = `<span class="q-status current">▶ In Room</span>`;
+    } else if (p.priority === 'urgent') {
+      statusHtml = `<span class="q-status urgent">⚠ Urgent</span>`;
+    } else {
+      statusHtml = `<span class="q-status waiting">⏳ Waiting</span>`;
+    }
+
+    let actionsHtml = '';
+    if (p.status === 'completed') {
+      actionsHtml = `<span style="font-size:11px;color:#94a3b8">Completed</span>`;
+    } else if (p.status === 'current') {
+      actionsHtml = `<button class="btn-sm success" onclick="openCompleteModal(${i})">Complete</button>`;
+    } else {
+      actionsHtml = `
+        <button class="btn-sm primary" onclick="callPatient(${i})">Call</button>
+        <button class="btn-sm danger"  onclick="skipPatient(${i})">Skip</button>`;
+    }
+
+    return `
+      <tr>
+        <td><span class="pt-num">${p.qNum}</span></td>
+        <td>
+          <div class="pt-name">${p.name}</div>
+          <div class="pt-age">${p.age}y, ${p.gender === 'M' ? 'Male' : 'Female'}</div>
+        </td>
+        <td><span class="time-tag">🕐 ${p.slot}</span></td>
+        <td style="font-size:12px;color:var(--muted);max-width:120px">${p.reason}</td>
+        <td>${statusHtml}</td>
+        <td><div class="action-row">${actionsHtml}</div></td>
+      </tr>`;
+  }).join('');
+}
+
+function renderCurrentPatient() {
+  const sec = document.getElementById('currentPatientSection');
+  const idx = state.currentPatientIdx;
+  if (idx === null || !state.queue[idx] || state.queue[idx].status !== 'current') {
+    sec.innerHTML = `
+      <div class="empty-state">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <p>No patient currently in room</p>
+      </div>`;
+    return;
+  }
+  const p = state.queue[idx];
+  const v = p.vitals;
+  sec.innerHTML = `
+    <div class="current-patient-card">
+      <div class="cp-top">
+        <div class="cp-avatar">${p.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+        <div>
+          <div class="cp-name">${p.name}</div>
+          <div class="cp-meta">${p.age}y · ${p.gender === 'M' ? 'Male' : 'Female'} · Queue #${p.qNum}</div>
+        </div>
+        <div class="cp-in-badge"><div class="live-dot"></div> In Room</div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">
+        <strong style="color:var(--text)">Reason:</strong> ${p.reason}
+      </div>
+      <div class="cp-vitals">
+        <div class="vital-chip">
+          <div class="vital-val">${v.bp}</div>
+          <div class="vital-label">Blood Pressure</div>
+        </div>
+        <div class="vital-chip">
+          <div class="vital-val">${v.hr}</div>
+          <div class="vital-label">Heart Rate</div>
+        </div>
+        <div class="vital-chip">
+          <div class="vital-val">${v.temp}</div>
+          <div class="vital-label">Temperature</div>
+        </div>
+      </div>
+      <div class="cp-actions">
+        <button class="btn-done" onclick="openCompleteModal(${idx})">✓ Complete Consultation</button>
+        <button class="btn-next" onclick="openAddNoteModal()">📝 Note</button>
+      </div>
+    </div>`;
+}
+
+function renderWaitTimes() {
+  const waitEl = document.getElementById('waitTimeBars');
+  const waiting = state.queue.filter(p => p.status === 'waiting');
+  if (!waiting.length) {
+    waitEl.innerHTML = `<div class="empty-state" style="padding:16px 0"><p>No patients waiting</p></div>`;
+    return;
+  }
+  waitEl.innerHTML = waiting.slice(0, 4).map((p, i) => {
+    const mins = state.stats.avgWait + (i * Math.floor(state.stats.consultTime));
+    const pct  = Math.min((mins / 80) * 100, 98);
+    return `
+      <div class="wait-bar-row">
+        <div class="wait-bar-label">
+          <span class="wait-bar-name">${p.name}</span>
+          <span class="wait-bar-time">~${mins} min</span>
+        </div>
+        <div class="wait-track">
+          <div class="wait-fill" style="--target-width:${pct}%"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderUpcoming() {
+  const upcoming = state.queue.filter(p => p.status === 'waiting');
+  document.getElementById('upcomingCount').textContent = `${upcoming.length} remaining`;
+  const el = document.getElementById('upcomingList');
+  if (!upcoming.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:16px 0"><p>All done for today 🎉</p></div>`;
+    return;
+  }
+  const dotColors = ['dot-blue','dot-orange','dot-red','dot-green','dot-gray'];
+  el.innerHTML = upcoming.slice(0, 6).map((p, i) => `
+    <div class="appt-item">
+      <div class="appt-time-badge">${p.slot}</div>
+      <div class="appt-info">
+        <div class="appt-name">${p.name}</div>
+        <div class="appt-reason">${p.reason}</div>
+      </div>
+      <div class="appt-dot ${dotColors[i % dotColors.length]}"></div>
+    </div>`).join('');
+}
+
+function renderPerformance() {
+  const s = state.stats;
+  const pct = s.satisfaction;
+  const offset = 282 - (282 * pct / 100);
+  document.getElementById('perfPct').textContent = `${pct}%`;
+  document.getElementById('perfOnTime').textContent = `${s.onTime}%`;
+  document.getElementById('perfUrgent').textContent = s.urgent;
+  document.getElementById('perfReturning').textContent = s.returning;
+  document.getElementById('perfNewPt').textContent = s.newPt;
+  setTimeout(() => {
+    document.getElementById('perfRing').style.strokeDashoffset = offset;
+  }, 400);
+}
+
+function renderNotes() {
+  const el = document.getElementById('notesList');
+  if (!state.notes.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:16px 0"><p>No notes yet</p></div>`;
+    return;
+  }
+  const tagMap = {
+    general:   '<span class="note-tag tag-general">General</span>',
+    'follow-up': '<span class="note-tag tag-follow-up">Follow-Up</span>',
+    urgent:    '<span class="note-tag tag-urgent">Urgent</span>',
+    review:    '<span class="note-tag tag-review">Review</span>',
+  };
+  el.innerHTML = state.notes.slice(0, 4).map(n => `
+    <div class="note-item">
+      <div class="note-top">
+        <span class="note-patient">${n.patient}</span>
+        <span class="note-time">${n.time}</span>
+      </div>
+      <div class="note-text">${n.text}</div>
+      ${tagMap[n.tag] || ''}
+    </div>`).join('');
+}
+
+function renderSidebarBadges() {
+  const waiting = state.queue.filter(p => p.status === 'waiting').length;
+  const total   = state.totalToday;
+  document.getElementById('sbQueueCount').textContent = waiting;
+  document.getElementById('sbPatientCount').textContent = total;
+}
+
+// ══════════════════════════════════════════════════
+//  ACTIONS
+// ══════════════════════════════════════════════════
+function callPatient(idx) {
+  // Mark current as skipped/waiting, set new as current
+  if (state.currentPatientIdx !== null && state.queue[state.currentPatientIdx]) {
+    state.queue[state.currentPatientIdx].status = 'waiting';
+  }
+  state.queue[idx].status = 'current';
+  state.currentPatientIdx = idx;
+  render();
+  showToast(`Called ${state.queue[idx].name} into the room`, 'green');
+}
+
+function skipPatient(idx) {
+  const p = state.queue[idx];
+  // Move to end of waiting list
+  const removed = state.queue.splice(idx, 1)[0];
+  removed.status = 'waiting';
+  removed.slot = SLOT_TIMES[Math.min(state.queue.length, SLOT_TIMES.length - 1)] || '16:30';
+  state.queue.push(removed);
+  // Re-number
+  state.queue.forEach((pt, i) => pt.qNum = i + 1);
+  if (state.currentPatientIdx === idx) state.currentPatientIdx = null;
+  // Adjust currentPatientIdx
+  const newCurIdx = state.queue.findIndex(pt => pt.status === 'current');
+  state.currentPatientIdx = newCurIdx !== -1 ? newCurIdx : null;
+  render();
+  showToast(`${p.name} moved to end of queue`, '');
+}
+
+function openCompleteModal(idx) {
+  state.pendingCompleteIdx = idx;
+  const p = state.queue[idx];
+  document.getElementById('completeModalSub').textContent = `Patient: ${p.name} · ${p.reason}`;
+  document.getElementById('completeModal').classList.add('open');
+}
+function closeCompleteModal() {
+  document.getElementById('completeModal').classList.remove('open');
+  state.pendingCompleteIdx = null;
+}
+function confirmComplete() {
+  const idx  = state.pendingCompleteIdx;
+  const diag = document.getElementById('completeDiagnosis').value.trim();
+  const rx   = document.getElementById('completePrescription').value.trim();
+  const note = document.getElementById('completeNotes').value.trim();
+  if (!diag) { showToast('Please enter a diagnosis', 'red'); return; }
+
+  const p = state.queue[idx];
+  p.status = 'completed';
+
+  // Add note
+  if (note || diag) {
+    state.notes.unshift({
+      patient: p.name,
+      text: `${diag}${rx ? '. Rx: ' + rx : ''}${note ? '. ' + note : ''}`,
+      tag: 'general',
+      time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+    });
+  }
+
+  // Auto-call next
+  const nextIdx = state.queue.findIndex(pt => pt.status === 'waiting');
+  if (nextIdx !== -1) {
+    state.queue[nextIdx].status = 'current';
+    state.currentPatientIdx = nextIdx;
+  } else {
+    state.currentPatientIdx = null;
+  }
+
+  state.completed = state.queue.filter(q => q.status === 'completed');
+  state.stats.onTime = Math.round((state.completed.length / Math.max(state.totalToday, 1)) * 100);
+
+  closeCompleteModal();
+  render();
+  showToast(`Consultation for ${p.name} completed`, 'green');
+
+  // Reset form
+  ['completeDiagnosis','completePrescription','completeNotes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+function openAddNoteModal() {
+  document.getElementById('noteModal').classList.add('open');
+}
+function closeNoteModal() {
+  document.getElementById('noteModal').classList.remove('open');
+}
+function saveNote() {
+  const patient = document.getElementById('notePatient').value.trim();
+  const text    = document.getElementById('noteText').value.trim();
+  const cat     = document.getElementById('noteCategory').value;
+  if (!patient || !text) { showToast('Fill in patient name and note', 'red'); return; }
+  const tagMap  = { 'General':'general', 'Follow-Up':'follow-up', 'Urgent':'urgent', 'Review':'review' };
+  state.notes.unshift({
+    patient, text, tag: tagMap[cat] || 'general',
+    time: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+  });
+  closeNoteModal();
+  renderNotes();
+  showToast(`Note saved for ${patient}`, 'green');
+  document.getElementById('notePatient').value = '';
+  document.getElementById('noteText').value = '';
+}
+
+function toggleAvailability() {
+  state.available = !state.available;
+  const toggle = document.getElementById('availToggle');
+  const text   = document.getElementById('toggleText');
+  if (state.available) {
+    toggle.classList.remove('off');
+    text.textContent = 'Available';
+    showToast('Status set to Available', 'green');
+  } else {
+    toggle.classList.add('off');
+    text.textContent = 'Unavailable';
+    showToast('Status set to Unavailable', '');
+  }
+}
+
+function setSbActive(el) {
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function refreshData() {
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  setTimeout(() => {
+    // Simulate new data - add 1-2 new waiting patients
+    const extra = Math.floor(Math.random() * 2) + 1;
+    for (let i = 0; i < extra; i++) {
+      const p = PATIENTS_POOL[Math.floor(Math.random() * PATIENTS_POOL.length)];
+      state.queue.push({
+        ...p,
+        slot: '16:00',
+        vitals: VITALS_POOL[Math.floor(Math.random() * VITALS_POOL.length)],
+        status: 'waiting',
+        qNum: state.queue.length + 1
+      });
+      state.totalToday++;
+    }
+    render();
+    btn.classList.remove('spinning');
+    showToast(`Queue refreshed · ${extra} new patient${extra>1?'s':''} added`, 'green');
+  }, 900);
+}
+
+// ── Toast ──
+let toastTimer = null;
+function showToast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type}`;
+  setTimeout(() => el.classList.add('show'), 10);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// ── Close modals on overlay click ──
+['noteModal','completeModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) {
+      if (id === 'noteModal') closeNoteModal();
+      else closeCompleteModal();
+    }
+  });
+});
+
+// ── Boot ──
+init();
+</script>
+</body>
+</html>
