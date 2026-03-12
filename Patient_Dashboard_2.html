@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SmartCare – AI Hospital Queue Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<style>
+/* ═══════════════════════════════════════════════
+   CSS VARIABLES & RESET
+═══════════════════════════════════════════════ */
+:root {
+  --blue-900: #0d2d6b;
+  --blue-800: #0d3880;
+  --blue-700: #1149a3;
+  --blue-600: #1565c0;
+  --blue-500: #1976d2;
+  --blue-400: #1e88e5;
+  --blue-300: #42a5f5;
+  --blue-200: #90caf9;
+  --blue-100: #bbdefb;
+  --blue-50:  #e3f2fd;
+  --cyan:     #00bcd4;
+  --green:    #22c55e;
+  --green-bg: #dcfce7;
+  --amber:    #f59e0b;
+  --amber-bg: #fef3c7;
+  --orange:   #ea580c;
+  --red:      #ef4444;
+  --white:    #ffffff;
+  --gray-50:  #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.04);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.1), 0 4px 16px rgba(0,0,0,.05);
+  --shadow-xl: 0 24px 64px rgba(0,0,0,.13), 0 8px 24px rgba(0,0,0,.06);
+  --shadow-blue: 0 8px 28px rgba(30,136,229,.32);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--gray-100);
+  color: var(--gray-800);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════════
+   SCREEN NAV (meta navigation between screens)
+═══════════════════════════════════════════════ */
+#screen-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+  background: var(--gray-900);
+  border-bottom: 2px solid var(--blue-700);
+  height: 44px;
+  display: flex; align-items: center; gap: 4px; padding: 0 16px;
+  overflow-x: auto;
+}
+#screen-nav span { color: var(--gray-500); font-size: 11px; white-space: nowrap; padding: 0 8px; font-family: 'DM Sans', sans-serif; }
+.snav-btn {
+  padding: 5px 12px; border: 1px solid var(--gray-700);
+  background: transparent; color: var(--gray-400);
+  border-radius: 4px; font-size: 11px; cursor: pointer;
+  white-space: nowrap; font-family: 'DM Sans', sans-serif;
+  transition: all .15s;
+}
+.snav-btn:hover, .snav-btn.active { background: var(--blue-400); color: #fff; border-color: var(--blue-400); }
+
+/* ═══════════════════════════════════════════════
+   SCREEN SYSTEM
+═══════════════════════════════════════════════ */
+.screen { display: none; min-height: 100vh; padding-top: 44px; }
+.screen.visible { display: flex; }
+
+/* ═══════════════════════════════════════════════
+   SHARED COMPONENTS
+═══════════════════════════════════════════════ */
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 28px; border-radius: 12px; font-size: 15px; font-weight: 600;
+  font-family: 'DM Sans', sans-serif; cursor: pointer; border: none;
+  transition: all .2s; white-space: nowrap;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--blue-600), var(--blue-400));
+  color: #fff; box-shadow: var(--shadow-blue);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 10px 32px rgba(30,136,229,.42); }
+.btn-secondary {
+  background: #fff; color: var(--blue-600);
+  border: 2px solid var(--blue-400);
+}
+.btn-secondary:hover { background: var(--blue-50); }
+.btn-ghost { background: rgba(255,255,255,.15); color: #fff; border: 1.5px solid rgba(255,255,255,.35); }
+.btn-ghost:hover { background: rgba(255,255,255,.25); }
+.btn-lg { padding: 16px 40px; font-size: 16px; border-radius: 14px; }
+.btn-full { width: 100%; }
+
+/* Form Inputs */
+.field { margin-bottom: 18px; }
+.field label { display: block; font-size: 12px; font-weight: 600; letter-spacing: .5px; color: var(--gray-600); text-transform: uppercase; margin-bottom: 7px; }
+.field input {
+  width: 100%; padding: 13px 16px; border: 1.5px solid var(--gray-200);
+  border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+  color: var(--gray-800); background: var(--gray-50); outline: none;
+  transition: all .2s;
+}
+.field input:focus { border-color: var(--blue-400); background: #fff; box-shadow: 0 0 0 4px rgba(30,136,229,.1); }
+.field input::placeholder { color: var(--gray-400); }
+
+/* Cards */
+.card {
+  background: #fff; border-radius: 18px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(30,136,229,.07);
+  padding: 24px;
+}
+.card-sm { padding: 18px 20px; border-radius: 14px; }
+
+/* Badges */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;
+  letter-spacing: .4px; text-transform: uppercase;
+}
+.badge-blue { background: var(--blue-50); color: var(--blue-600); }
+.badge-green { background: var(--green-bg); color: #15803d; }
+.badge-amber { background: var(--amber-bg); color: #92400e; }
+.badge-orange { background: #fff7ed; color: var(--orange); border: 1px solid #fed7aa; }
+.badge-red { background: #fef2f2; color: var(--red); }
+
+/* Dot indicator */
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-green { background: var(--green); animation: pulse-dot 1.6s infinite; }
+.dot-amber { background: var(--amber); animation: pulse-dot 1.6s infinite; }
+.dot-blue  { background: var(--blue-400); }
+
+/* ═══════════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════════ */
+@keyframes fadeUp   { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
+@keyframes slideDown { from { opacity:0; transform:translateY(-14px); } to { opacity:1; transform:translateY(0); } }
+@keyframes scaleIn  { from { opacity:0; transform:scale(.9); } to { opacity:1; transform:scale(1); } }
+@keyframes float    { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+@keyframes spin     { to { transform:rotate(360deg); } }
+@keyframes pulse-dot { 0%,100% { box-shadow:0 0 0 0 currentColor; } 70% { box-shadow:0 0 0 6px transparent; } }
+@keyframes scanLine { 0%,100% { top:10%; } 50% { top:84%; } }
+@keyframes ringPulse { from { transform:scale(1); opacity:.8; } to { transform:scale(2.4); opacity:0; } }
+@keyframes dotPulse { 0%,80%,100% { transform:scale(0); opacity:.4; } 40% { transform:scale(1); opacity:1; } }
+@keyframes barGrow  { from { width:0; } to { width:55%; } }
+@keyframes countdown { from { stroke-dashoffset:283; } to { stroke-dashoffset:0; } }
+@keyframes shimmer  { from { background-position:-400px 0; } to { background-position:400px 0; } }
+@keyframes slideRight { from { transform:translateX(-20px); opacity:0; } to { transform:translateX(0); opacity:1; } }
+@keyframes bounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-5px); } }
+@keyframes gridScroll { from { background-position:0 0; } to { background-position:40px 40px; } }
+
+.anim-fadeup  { animation: fadeUp .55s ease forwards; }
+.anim-scalein { animation: scaleIn .4s cubic-bezier(.16,1,.3,1) forwards; }
+.anim-slidedwn { animation: slideDown .4s ease forwards; }
+
+/* ═══════════════════════════════════════════════
+   S1 – LANDING PAGE
+═══════════════════════════════════════════════ */
+#s1 {
+  flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(140deg, #063580 0%, #0d4db0 25%, #1565c0 55%, #1976d2 80%, #1e88e5 100%);
+  position: relative; overflow: hidden; padding: 44px 24px 40px;
+}
+#s1::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 75% 30%, rgba(255,255,255,.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 15% 75%, rgba(0,100,220,.18) 0%, transparent 50%);
+}
+.s1-grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  animation: gridScroll 12s linear infinite;
+}
+.s1-inner { position: relative; z-index: 1; text-align: center; max-width: 700px; }
+.s1-logo-row { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 40px; animation: fadeUp .7s ease; }
+.s1-logo-icon {
+  width: 76px; height: 76px; border-radius: 22px;
+  background: rgba(255,255,255,.15); backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255,255,255,.3);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,.2);
+}
+.s1-logo-name { font-family: 'Libre Baskerville', serif; font-size: 32px; color: #fff; font-weight: 700; line-height: 1; }
+.s1-logo-sub  { color: rgba(255,255,255,.55); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
+
+.s1-illustration { animation: float 5s ease-in-out infinite; margin-bottom: 36px; }
+
+.s1-title { font-family: 'Libre Baskerville', serif; font-size: 40px; font-weight: 700; color: #fff; line-height: 1.22; margin-bottom: 14px; animation: fadeUp .7s .1s ease both; }
+.s1-sub   { color: rgba(255,255,255,.72); font-size: 17px; line-height: 1.65; margin-bottom: 40px; animation: fadeUp .7s .2s ease both; }
+
+.s1-badges { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 44px; animation: fadeUp .7s .3s ease both; }
+.s1-badge  {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 18px; border-radius: 50px;
+  background: rgba(255,255,255,.12); backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.88); font-size: 13px; font-weight: 500;
+}
+
+.s1-cta { display: flex; gap: 14px; justify-content: center; animation: fadeUp .7s .4s ease both; }
+
+/* ═══════════════════════════════════════════════
+   S2/S3 – AUTH PAGES
+═══════════════════════════════════════════════ */
+.auth-screen {
+  flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #deeeff 0%, #f0f5ff 50%, #e3f0fd 100%);
+  padding: 44px 24px 40px;
+}
+.auth-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+.auth-logo-icon {
+  width: 44px; height: 44px; border-radius: 13px;
+  background: linear-gradient(135deg, var(--blue-600), var(--blue-400));
+  display: flex; align-items: center; justify-content: center;
+}
+.auth-logo-text { font-family: 'Libre Baskerville', serif; font-size: 22px; color: var(--blue-700); font-weight: 700; }
+.auth-card { width: 440px; animation: fadeUp .5s ease; }
+.auth-card-title { font-family: 'Libre Baskerville', serif; font-size: 26px; color: var(--gray-900); margin-bottom: 6px; }
+.auth-card-sub   { color: var(--gray-500); font-size: 14px; margin-bottom: 28px; }
+.auth-link-row   { text-align: center; margin-top: 18px; font-size: 14px; color: var(--gray-500); }
+.auth-link { color: var(--blue-500); font-weight: 600; cursor: pointer; text-decoration: none; }
+.auth-link:hover { text-decoration: underline; }
+.forgot-row { text-align: right; margin-top: -10px; margin-bottom: 20px; }
+
+/* ═══════════════════════════════════════════════
+   S4 – FACE SCAN
+═══════════════════════════════════════════════ */
+#s4.auth-screen .auth-card { width: 500px; }
+.scan-frame {
+  position: relative; width: 320px; height: 280px; border-radius: 20px;
+  overflow: hidden; background: linear-gradient(135deg, #0a1628, #0d2d6b, #1149a3);
+  margin: 0 auto 20px;
+}
+.scan-face-bg { position: absolute; inset: 0; }
+.scan-line-el {
+  position: absolute; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+  box-shadow: 0 0 20px #00e5ff; animation: scanLine 2.8s ease-in-out infinite;
+  display: none; top: 10%;
+}
+.scan-frame.active .scan-line-el { display: block; }
+.scan-corner { position: absolute; width: 28px; height: 28px; border-color: #00e5ff; border-style: solid; }
+.sc-tl { top:14px; left:14px;  border-width:3px 0 0 3px; border-radius:4px 0 0 0; }
+.sc-tr { top:14px; right:14px; border-width:3px 3px 0 0; border-radius:0 4px 0 0; }
+.sc-bl { bottom:14px; left:14px;  border-width:0 0 3px 3px; border-radius:0 0 0 4px; }
+.sc-br { bottom:14px; right:14px; border-width:0 3px 3px 0; border-radius:0 0 4px 0; }
+.scan-inner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.scan-avatar-circle {
+  width: 130px; height: 150px; border-radius: 65px/75px;
+  border: 1.5px dashed rgba(255,255,255,.2);
+  display: flex; align-items: center; justify-content: center;
+}
+.scan-label { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; font-size: 11px; letter-spacing: 2px; color: rgba(0,229,255,.7); text-transform: uppercase; }
+.scan-progress-wrap { display: none; }
+.scan-progress-wrap.show { display: block; margin-bottom: 18px; }
+.scan-prog-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: var(--blue-500); font-weight: 600; }
+.prog-track { height: 8px; background: var(--gray-200); border-radius: 8px; overflow: hidden; }
+.prog-bar { height: 100%; width: 0; background: linear-gradient(90deg, var(--blue-600), #00e5ff); border-radius: 8px; transition: width .12s; }
+.scan-checks { display: flex; gap: 16px; justify-content: center; margin-top: 12px; }
+.scan-check  { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gray-400); transition: color .3s; }
+.scan-check.ok { color: var(--green); }
+.scan-check-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray-300); transition: background .3s; }
+.scan-check.ok .scan-check-dot { background: var(--green); }
+.scan-privacy { text-align: center; margin-top: 14px; font-size: 12px; color: var(--gray-400); }
+
+/* ═══════════════════════════════════════════════
+   S5 – QUEUE PROCESSING
+═══════════════════════════════════════════════ */
+#s5 {
+  flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #0a1e50 0%, #0d3880 40%, #1149a3 100%);
+  padding: 44px 24px 40px;
+}
+.orbit-wrap { position: relative; width: 160px; height: 160px; margin: 0 auto 40px; }
+.orbit-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.15);
+  animation: ringPulse 2.5s ease-out infinite;
+}
+.orbit-ring:nth-child(2) { animation-delay: .6s; }
+.orbit-ring:nth-child(3) { animation-delay: 1.2s; }
+.orbit-core {
+  position: absolute; inset: 24px; border-radius: 50%;
+  background: rgba(255,255,255,.1); backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255,255,255,.25);
+  display: flex; align-items: center; justify-content: center;
+}
+.orbit-icon { animation: spin 2.5s linear infinite; }
+.proc-title { font-family: 'Libre Baskerville', serif; font-size: 26px; color: #fff; text-align: center; margin-bottom: 10px; }
+.proc-sub   { color: rgba(255,255,255,.65); font-size: 15px; text-align: center; line-height: 1.7; max-width: 420px; margin: 0 auto 40px; }
+.steps-box  {
+  width: 380px; background: rgba(255,255,255,.08); border-radius: 18px;
+  padding: 24px; border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(8px);
+}
+.step-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.step-row:last-child { margin-bottom: 0; }
+.step-circle {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,.2);
+  display: flex; align-items: center; justify-content: center;
+  transition: all .4s;
+}
+.step-circle.done  { border-color: var(--green); background: rgba(34,197,94,.15); }
+.step-circle.active{ border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.1); }
+.step-dot-anim { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: dotPulse 1.2s infinite; }
+.step-txt { font-size: 14px; color: rgba(255,255,255,.45); transition: color .3s; }
+.step-txt.done   { color: rgba(255,255,255,.9); font-weight: 500; }
+.step-txt.active { color: #fff; font-weight: 600; }
+.dots-loader { display: flex; gap: 8px; justify-content: center; margin-top: 32px; }
+.dots-loader span {
+  width: 11px; height: 11px; border-radius: 50%; background: var(--blue-300);
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+.dots-loader span:nth-child(2) { animation-delay: .18s; }
+.dots-loader span:nth-child(3) { animation-delay: .36s; }
+
+/* ═══════════════════════════════════════════════
+   S6 – SLOT MODAL
+═══════════════════════════════════════════════ */
+#s6 {
+  align-items: center; justify-content: center;
+  background: rgba(10,20,60,.6); backdrop-filter: blur(6px);
+  padding: 44px 24px 40px;
+}
+#s6 .modal-bg-layer {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #e8f0fe 0%, #f0f5ff 100%);
+  z-index: -1;
+}
+.modal-card {
+  width: 500px; border-radius: 26px; padding: 42px;
+  box-shadow: var(--shadow-xl);
+  animation: scaleIn .4s cubic-bezier(.16,1,.3,1);
+}
+.modal-icon-wrap {
+  width: 68px; height: 68px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue-600), var(--blue-400));
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 18px; box-shadow: var(--shadow-blue);
+}
+.modal-title { font-family: 'Libre Baskerville', serif; font-size: 22px; text-align: center; margin-bottom: 8px; }
+.modal-desc  { color: var(--gray-500); font-size: 14px; text-align: center; line-height: 1.65; margin-bottom: 26px; }
+.slot-detail-box {
+  background: linear-gradient(135deg, var(--blue-50), #f0f8ff);
+  border: 1.5px solid rgba(30,136,229,.18);
+  border-radius: 16px; padding: 20px; margin-bottom: 18px;
+}
+.slot-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.slot-row:last-child { margin-bottom: 0; }
+.slot-lbl { font-size: 13px; color: var(--gray-500); font-weight: 500; }
+.slot-val  { font-size: 15px; font-weight: 700; color: var(--blue-600); display: flex; align-items: center; gap: 7px; }
+.slot-val.dark { color: var(--gray-800); }
+.notice-box {
+  background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;
+  padding: 13px 16px; margin-bottom: 26px; display: flex; gap: 10px; align-items: flex-start;
+}
+.notice-box p { font-size: 13px; color: #92400e; line-height: 1.55; }
+.modal-btns { display: flex; gap: 12px; }
+
+/* ═══════════════════════════════════════════════
+   S7 – DASHBOARD
+═══════════════════════════════════════════════ */
+#s7 { flex-direction: row; align-items: stretch; }
+
+/* Sidebar */
+.sidebar {
+  width: 248px; flex-shrink: 0;
+  background: linear-gradient(180deg, #09213e 0%, #0d3880 100%);
+  display: flex; flex-direction: column; min-height: calc(100vh - 44px);
+  position: sticky; top: 44px; height: calc(100vh - 44px);
+  overflow-y: auto;
+}
+.sb-brand { padding: 24px 20px 18px; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 11px; }
+.sb-brand-icon { width: 42px; height: 42px; border-radius: 13px; background: rgba(255,255,255,.12); display: flex; align-items: center; justify-content: center; }
+.sb-brand-name { font-family: 'Libre Baskerville', serif; color: #fff; font-size: 17px; font-weight: 700; }
+.sb-brand-sub  { color: rgba(255,255,255,.38); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+.sb-patient { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,.06); display: flex; align-items: center; gap: 11px; }
+.sb-avatar  { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, var(--blue-300), var(--blue-400)); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.sb-name    { color: #fff; font-weight: 600; font-size: 14px; }
+.sb-id      { display: flex; align-items: center; gap: 5px; color: rgba(255,255,255,.4); font-size: 11px; margin-top: 3px; }
+.sb-nav     { flex: 1; padding: 10px 0; }
+.sb-item    { display: flex; align-items: center; gap: 11px; padding: 12px 20px; color: rgba(255,255,255,.52); font-size: 14px; font-weight: 500; cursor: pointer; transition: all .2s; border-left: 3px solid transparent; }
+.sb-item:hover  { background: rgba(255,255,255,.07); color: #fff; }
+.sb-item.active { background: rgba(255,255,255,.13); color: #fff; border-left-color: var(--blue-300); }
+.sb-item .badge { margin-left: auto; }
+.sb-section-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,.25); padding: 14px 20px 6px; }
+.sb-foot { padding: 12px 0; border-top: 1px solid rgba(255,255,255,.06); }
+
+/* Main Content */
+.dash-main { flex: 1; padding: 28px 30px; overflow-y: auto; background: var(--gray-50); }
+.dash-topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 26px; }
+.dash-greeting { font-family: 'Libre Baskerville', serif; font-size: 26px; color: var(--gray-900); margin-bottom: 5px; }
+.dash-sub { color: var(--gray-500); font-size: 15px; }
+.time-chip {
+  display: flex; align-items: center; gap: 9px;
+  background: #fff; padding: 10px 16px; border-radius: 12px;
+  box-shadow: var(--shadow-sm); font-size: 14px; color: var(--gray-600); flex-shrink: 0;
+  border: 1px solid var(--gray-200);
+}
+
+/* Notification banners */
+.notif-banner {
+  border-radius: 14px; padding: 14px 18px;
+  display: flex; align-items: flex-start; gap: 13px;
+  margin-bottom: 18px; animation: slideDown .4s ease;
+}
+.notif-banner.break-banner {
+  background: linear-gradient(135deg, #fff8e1, #fff3cd);
+  border: 1.5px solid #fde68a;
+}
+.notif-banner.reminder-banner {
+  background: linear-gradient(135deg, #e8f5e9, #f0fdf4);
+  border: 1.5px solid #86efac;
+}
+.notif-icon-wrap {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.break-icon-wrap   { background: rgba(245,158,11,.18); }
+.reminder-icon-wrap{ background: rgba(34,197,94,.15); }
+.notif-body-title { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+.notif-body-text  { font-size: 13px; line-height: 1.55; color: var(--gray-600); }
+.notif-highlight  { font-weight: 700; color: var(--orange); }
+.notif-green      { font-weight: 700; color: #15803d; }
+.notif-close { margin-left: auto; width: 28px; height: 28px; border-radius: 8px; background: rgba(0,0,0,.06); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* Stat cards row */
+.stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 22px; }
+.stat-card { animation: fadeUp .5s ease forwards; opacity: 0; }
+.stat-card:nth-child(1){animation-delay:.05s}
+.stat-card:nth-child(2){animation-delay:.12s}
+.stat-card:nth-child(3){animation-delay:.18s}
+.stat-card:nth-child(4){animation-delay:.25s}
+.sc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.sc-label  { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-500); }
+.sc-icon-wrap { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; }
+.sc-value { font-size: 28px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; line-height: 1; font-family: 'Libre Baskerville', serif; }
+.sc-sub   { font-size: 12px; color: var(--gray-400); }
+
+/* Break alert card */
+.break-card {
+  background: linear-gradient(135deg, #fff8e1, #fffbf0);
+  border: 1.5px solid #fde68a; border-radius: 18px; padding: 22px;
+  animation: slideDown .4s ease;
+}
+.break-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.break-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.break-row-item { background: rgba(255,255,255,.7); border-radius: 12px; padding: 14px; }
+.bri-label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--gray-400); font-weight: 600; margin-bottom: 5px; }
+.bri-value { font-size: 18px; font-weight: 700; color: var(--gray-800); }
+.bri-value.updated { color: var(--orange); font-size: 20px; }
+.bri-value.strike  { text-decoration: line-through; color: var(--gray-400); font-size: 16px; }
+
+/* Bottom row */
+.bottom-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; margin-bottom: 22px; }
+.queue-dots-wrap { display: flex; gap: 7px; margin: 16px 0; flex-wrap: wrap; }
+.q-dot {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; transition: all .2s;
+}
+.qd-past   { background: var(--gray-100); border: 2px solid var(--gray-200); color: var(--gray-400); }
+.qd-active { background: linear-gradient(135deg, var(--blue-600), var(--blue-400)); border: 2px solid var(--blue-400); color: #fff; box-shadow: 0 4px 14px rgba(30,136,229,.4); }
+.qd-future { background: var(--gray-50); border: 2px dashed var(--gray-200); color: var(--gray-300); }
+.queue-prog-label { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: var(--gray-500); }
+.queue-prog-label b { color: var(--blue-600); }
+.prog-track-lg { height: 10px; background: var(--gray-100); border-radius: 10px; overflow: hidden; }
+.prog-bar-lg { height: 100%; background: linear-gradient(90deg, var(--blue-600), var(--blue-300)); border-radius: 10px; animation: barGrow 1.6s .5s ease forwards; width: 0; }
+.mini-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 18px; }
+.mini-stat  { background: var(--gray-50); border-radius: 12px; padding: 12px; text-align: center; border: 1px solid var(--gray-200); }
+.ms-val    { font-size: 17px; font-weight: 700; color: var(--gray-800); font-family: 'Libre Baskerville', serif; }
+.ms-label  { font-size: 11px; color: var(--gray-400); margin-top: 2px; text-transform: uppercase; letter-spacing: .4px; }
+
+/* Detail rows */
+.detail-row { display: flex; align-items: center; gap: 13px; padding: 11px 0; border-bottom: 1px solid var(--gray-100); }
+.detail-row:last-child { border-bottom: none; }
+.det-icon  { width: 34px; height: 34px; border-radius: 10px; background: var(--blue-50); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.det-lbl   { font-size: 11px; color: var(--gray-400); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+.det-val   { font-size: 14px; font-weight: 700; color: var(--gray-800); margin-top: 1px; }
+
+/* Countdown Timer */
+.countdown-card { text-align: center; animation: fadeUp .5s .3s ease both; }
+.timer-circle-wrap { position: relative; width: 120px; height: 120px; margin: 0 auto 14px; }
+.timer-circle-bg   { fill: none; stroke: var(--gray-100); stroke-width: 8; }
+.timer-circle-fg   { fill: none; stroke: var(--blue-400); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 283; stroke-dashoffset: 80; transform: rotate(-90deg); transform-origin: center; transition: stroke-dashoffset 1s linear; }
+.timer-display { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.timer-mins { font-size: 26px; font-weight: 700; color: var(--blue-600); font-family: 'Libre Baskerville', serif; line-height: 1; }
+.timer-secs { font-size: 13px; color: var(--gray-400); }
+.timer-label { font-size: 13px; color: var(--gray-500); font-weight: 500; }
+
+/* Room card */
+.room-info-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--gray-50); border-radius: 10px; border: 1px solid var(--gray-200); margin-bottom: 10px; }
+.room-info-row:last-child { margin-bottom: 0; }
+.rir-icon { width: 32px; height: 32px; border-radius: 9px; background: var(--blue-50); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.rir-lbl { font-size: 11px; color: var(--gray-400); }
+.rir-val { font-size: 14px; font-weight: 700; color: var(--gray-800); }
+
+/* FCFS Banner */
+.fcfs-banner {
+  background: linear-gradient(135deg, var(--blue-700), var(--blue-500));
+  border-radius: 16px; padding: 18px 22px;
+  display: flex; align-items: center; gap: 16px;
+  animation: fadeUp .5s .4s ease both; opacity: 0;
+}
+.fcfs-banner-icon { width: 48px; height: 48px; border-radius: 14px; background: rgba(255,255,255,.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fcfs-banner-title { color: #fff; font-weight: 700; font-size: 15px; margin-bottom: 3px; }
+.fcfs-banner-sub   { color: rgba(255,255,255,.7); font-size: 13px; }
+.wait-chip { margin-left: auto; flex-shrink: 0; background: rgba(255,255,255,.15); border-radius: 12px; padding: 10px 18px; text-align: center; }
+.wait-num { color: #fff; font-size: 22px; font-weight: 700; font-family: 'Libre Baskerville', serif; }
+.wait-lbl { color: rgba(255,255,255,.65); font-size: 11px; }
+
+/* Confirmed badge */
+.confirmed-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3);
+  border-radius: 50px; padding: 6px 14px; margin-bottom: 8px;
+}
+.conf-icon { width: 20px; height: 20px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; }
+.conf-text { font-size: 12px; font-weight: 700; color: #15803d; letter-spacing: .5px; text-transform: uppercase; }
+
+/* SVG icon sizes */
+.icon-sm { width: 16px; height: 16px; }
+.icon-md { width: 20px; height: 20px; }
+.icon-lg { width: 24px; height: 24px; }
+.icon-xl { width: 32px; height: 32px; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+   SCREEN NAVIGATION BAR
+════════════════════════════════════════ -->
+<nav id="screen-nav">
+  <span>SCREENS →</span>
+  <button class="snav-btn active" onclick="go('s1',this)">S1 Landing</button>
+  <button class="snav-btn" onclick="go('s2',this)">S2 Register</button>
+  <button class="snav-btn" onclick="go('s3',this)">S3 Login</button>
+  <button class="snav-btn" onclick="go('s4',this)">S4 Face Scan</button>
+  <button class="snav-btn" onclick="go('s5',this)">S5 Processing</button>
+  <button class="snav-btn" onclick="go('s6',this)">S6 Slot Popup</button>
+  <button class="snav-btn" onclick="go('s7',this)">S7 Dashboard</button>
+</nav>
+
+
+<!-- ════════════════════════════════════════
+     SCREEN 1 – LANDING PAGE
+════════════════════════════════════════ -->
+<section id="s1" class="screen visible">
+  <div class="s1-grid"></div>
+  <div class="s1-inner">
+
+    <!-- Logo -->
+    <div class="s1-logo-row">
+      <div class="s1-logo-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <div style="text-align:left">
+        <div class="s1-logo-name">SmartCare</div>
+        <div class="s1-logo-sub">Hospital System</div>
+      </div>
+    </div>
+
+    <!-- Hero SVG illustration -->
+    <div class="s1-illustration">
+      <svg width="200" height="160" viewBox="0 0 200 160" fill="none">
+        <circle cx="100" cy="80" r="72" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.15)" stroke-width="1.5"/>
+        <rect x="82" y="30" width="36" height="100" rx="10" fill="rgba(255,255,255,.85)"/>
+        <rect x="32" y="62" width="136" height="36" rx="10" fill="rgba(255,255,255,.85)"/>
+        <circle cx="100" cy="80" r="52" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
+        <!-- People silhouettes -->
+        <circle cx="44" cy="118" r="9" fill="rgba(255,255,255,.5)"/>
+        <rect x="38" y="127" width="12" height="20" rx="6" fill="rgba(255,255,255,.5)"/>
+        <circle cx="68" cy="118" r="9" fill="rgba(255,255,255,.4)"/>
+        <rect x="62" y="127" width="12" height="20" rx="6" fill="rgba(255,255,255,.4)"/>
+        <circle cx="155" cy="118" r="9" fill="rgba(255,255,255,.3)"/>
+        <rect x="149" y="127" width="12" height="20" rx="6" fill="rgba(255,255,255,.3)"/>
+      </svg>
+    </div>
+
+    <h1 class="s1-title">Welcome to Smart Hospital<br>Queue Management System</h1>
+    <p class="s1-sub">AI-powered FCFS appointment scheduling with automatic<br>slot assignment. No manual selection required.</p>
+
+    <!-- Feature badges -->
+    <div class="s1-badges">
+      <div class="s1-badge">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+        FCFS Queue
+      </div>
+      <div class="s1-badge">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Face Verify
+      </div>
+      <div class="s1-badge">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Auto Schedule
+      </div>
+      <div class="s1-badge">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Secure
+      </div>
+    </div>
+
+    <!-- CTAs -->
+    <div class="s1-cta">
+      <button class="btn btn-white btn-lg" onclick="go('s3')" style="background:#fff;color:var(--blue-700);border:none;font-family:'DM Sans',sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.2);font-weight:700;padding:16px 52px;font-size:16px;border-radius:14px;cursor:pointer;transition:all .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+        Login
+      </button>
+      <button class="btn btn-ghost btn-lg" onclick="go('s2')" style="font-family:'DM Sans',sans-serif;padding:16px 52px;font-size:16px;border-radius:14px;font-weight:700;">
+        Register
+      </button>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════
+     SCREEN 2 – REGISTER PAGE
+════════════════════════════════════════ -->
+<section id="s2" class="screen auth-screen">
+  <div class="auth-logo">
+    <div class="auth-logo-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    <span class="auth-logo-text">SmartCare</span>
+  </div>
+
+  <div class="card auth-card">
+    <h2 class="auth-card-title">Create Account</h2>
+    <p class="auth-card-sub">Register to access the hospital queue system</p>
+
+    <div class="field">
+      <label>
+        <svg class="icon-sm" style="vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Full Name
+      </label>
+      <input type="text" placeholder="Rahul Sharma"/>
+    </div>
+    <div class="field">
+      <label>
+        <svg class="icon-sm" style="vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.68A2 2 0 012 .18h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7a16 16 0 006.72 6.72l1.19-1.19a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 14.92z"/></svg>
+        Phone Number
+      </label>
+      <input type="tel" placeholder="+91 98765 43210"/>
+    </div>
+    <div class="field">
+      <label>
+        <svg class="icon-sm" style="vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Email Address
+      </label>
+      <input type="email" placeholder="you@example.com"/>
+    </div>
+    <div class="field">
+      <label>
+        <svg class="icon-sm" style="vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Password
+      </label>
+      <input type="password" placeholder="Min. 8 characters"/>
+    </div>
+    <div class="field" style="margin-bottom:24px">
+      <label>
+        <svg class="icon-sm" style="vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Confirm Password
+      </label>
+      <input type="password" placeholder="Re-enter password"/>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="go('s4')" style="font-family:'DM Sans',sans-serif;">
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+      Create Account
+    </button>
+
+    <p class="auth-link-row">
+      Already have an account? <a class="auth-link" onclick="go('s3')">Login</a>
+    </p>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════
+     SCREEN 3 – LOGIN PAGE
+════════════════════════════════════════ -->
+<section id="s3" class="screen auth-screen">
+  <div class="auth-logo">
+    <div class="auth-logo-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    <span class="auth-logo-text">SmartCare</span>
+  </div>
+
+  <div class="card auth-card" style="width:400px;">
+    <h2 class="auth-card-title">Welcome Back</h2>
+    <p class="auth-card-sub">Sign in to manage your appointments</p>
+
+    <div class="field">
+      <label>Email Address</label>
+      <input type="email" placeholder="you@example.com"/>
+    </div>
+    <div class="field" style="margin-bottom:8px;">
+      <label>Password</label>
+      <input type="password" placeholder="Enter your password"/>
+    </div>
+    <div class="forgot-row">
+      <a class="auth-link" style="font-size:13px;">Forgot Password?</a>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="go('s4')" style="font-family:'DM Sans',sans-serif;">
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      Sign In
+    </button>
+
+    <p class="auth-link-row">
+      New patient? <a class="auth-link" onclick="go('s2')">Create an account</a>
+    </p>
+    <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--gray-400);">
+      🔒 All data encrypted · Secured by SSL
+    </p>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════
+     SCREEN 4 – FACE SCAN VERIFICATION
+════════════════════════════════════════ -->
+<section id="s4" class="screen auth-screen">
+  <div class="auth-logo">
+    <div class="auth-logo-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    </div>
+    <span class="auth-logo-text">SmartCare</span>
+  </div>
+
+  <div class="card auth-card" style="width:500px;text-align:center;">
+    <div style="width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,var(--blue-600),var(--blue-400));display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:var(--shadow-blue);">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    </div>
+    <h2 style="font-family:'Libre Baskerville',serif;font-size:24px;margin-bottom:8px;color:var(--gray-900);">Identity Verification</h2>
+    <p style="color:var(--gray-500);font-size:14px;margin-bottom:28px;line-height:1.65;">
+      Please scan your face for identity verification.<br>Ensure you are in a well-lit area.
+    </p>
+
+    <!-- Camera Frame -->
+    <div class="scan-frame" id="scanFrame" style="margin-bottom:22px;">
+      <svg class="scan-face-bg" viewBox="0 0 320 280" fill="none" style="position:absolute;inset:0;width:100%;height:100%;">
+        <ellipse cx="160" cy="128" rx="66" ry="76" stroke="rgba(255,255,255,.13)" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <ellipse cx="160" cy="128" rx="50" ry="60" fill="rgba(255,255,255,.04)"/>
+        <circle cx="140" cy="118" r="6" fill="rgba(255,255,255,.1)"/>
+        <circle cx="180" cy="118" r="6" fill="rgba(255,255,255,.1)"/>
+        <path d="M145 155 Q160 168 175 155" stroke="rgba(255,255,255,.13)" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <text x="50%" y="250" text-anchor="middle" fill="rgba(0,229,255,.6)" font-size="11" font-family="DM Sans,sans-serif" letter-spacing="2">ALIGN FACE IN FRAME</text>
+      </svg>
+      <div class="scan-line-el" id="scanLine"></div>
+      <div class="scan-corner sc-tl"></div><div class="scan-corner sc-tr"></div>
+      <div class="scan-corner sc-bl"></div><div class="scan-corner sc-br"></div>
+      <div class="scan-inner" id="scanInner">
+        <div class="scan-avatar-circle">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scan Progress (hidden until scan) -->
+    <div class="scan-progress-wrap" id="scanProgress">
+      <div class="scan-prog-header">
+        <span>Scanning face…</span>
+        <span id="scanPct">0%</span>
+      </div>
+      <div class="prog-track"><div class="prog-bar" id="scanBar"></div></div>
+      <div class="scan-checks">
+        <div class="scan-check" id="chk0"><div class="scan-check-dot" id="cdot0"></div>Face Detected</div>
+        <div class="scan-check" id="chk1"><div class="scan-check-dot" id="cdot1"></div>Position OK</div>
+        <div class="scan-check" id="chk2"><div class="scan-check-dot" id="cdot2"></div>Lighting OK</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full" id="scanBtn" onclick="startScan()" style="font-family:'DM Sans',sans-serif;margin-top:4px;">
+      <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      Start Face Scan
+    </button>
+    <p class="scan-privacy">🔒 Face data processed locally · Never stored</p>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════
+     SCREEN 5 – QUEUE PROCESSING
+════════════════════════════════════════ -->
+<section id="s5" class="screen" style="flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(180deg,#0a1e50 0%,#0d3880 40%,#1149a3 100%);padding:44px 24px 40px;">
+  <div class="orbit-wrap">
+    <div class="orbit-ring"></div>
+    <div class="orbit-ring"></div>
+    <div class="orbit-ring"></div>
+    <div class="orbit-core">
+      <div class="orbit-icon">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="rgba(255,255,255,.9)"/><circle cx="3" cy="12" r="1" fill="rgba(255,255,255,.9)"/><circle cx="3" cy="18" r="1" fill="rgba(255,255,255,.9)"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="proc-title">Processing Your Request</h2>
+  <p class="proc-sub">Checking doctor availability and assigning your appointment slot based on the current queue.</p>
+
+  <div class="steps-box" id="stepsBox">
+    <div class="step-row"><div class="step-circle" id="pc0"><div class="step-dot-anim"></div></div><span class="step-txt active" id="pt0">Verifying identity…</span></div>
+    <div class="step-row"><div class="step-circle" id="pc1"></div><span class="step-txt" id="pt1">Checking doctor availability…</span></div>
+    <div class="step-row"><div class="step-circle" id="pc2"></div><span class="step-txt" id="pt2">Analysing queue position…</span></div>
+    <div class="step-row"><div class="step-circle" id="pc3"></div><span class="step-txt" id="pt3">Applying FCFS algorithm…</span></div>
+    <div class="step-row" style="margin-bottom:0"><div class="step-circle" id="pc4"></div><span class="step-txt" id="pt4">Assigning appointment slot…</span></div>
+  </div>
+  <div class="dots-loader"><span></span><span></span><span></span></div>
+</section>
+
+
+<!-- ════════════════════════════════════════
+     SCREEN 6 – SLOT ASSIGNMENT MODAL
+════════════════════════════════════════ -->
+<section id="s6" class="screen" style="position:relative;align-items:center;justify-content:center;padding:44px 24px 40px;">
+  <div class="modal-bg-layer"></div>
+  <!-- Blurred background hint -->
+  <div style="position:absolute;inset:44px 0 0 0;background:linear-gradient(135deg,#deeeff,#f0f5ff);z-index:0;"></div>
+  <div style="position:absolute;inset:44px 0 0 0;background:rgba(10,25,70,.45);backdrop-filter:blur(5px);z-index:1;"></div>
+
+  <div class="card modal-card" style="position:relative;z-index:2;">
+    <div class="modal-icon-wrap">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    </div>
+    <h2 class="modal-title">Next Available Appointment<br>Slot Assigned Automatically</h2>
+    <p class="modal-desc">Your appointment has been automatically scheduled based on the hospital's first-come-first-served queue. You cannot manually select a different slot.</p>
+
+    <div class="slot-detail-box">
+      <div class="slot-row">
+        <span class="slot-lbl">Appointment Time</span>
+        <span class="slot-val">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          9:00 AM – 9:30 AM
+        </span>
+      </div>
+      <div class="slot-row">
+        <span class="slot-lbl">Date</span>
+        <span class="slot-val dark">Thursday, 12 March 2026</span>
+      </div>
+      <div class="slot-row">
+        <span class="slot-lbl">Doctor</span>
+        <span class="slot-val dark">Dr. Anita Sharma</span>
+      </div>
+      <div class="slot-row">
+        <span class="slot-lbl">Queue Number</span>
+        <span class="slot-val dark">#5</span>
+      </div>
+    </div>
+
+    <div class="notice-box">
+      <span style="font-size:18px;flex-shrink:0;">ℹ️</span>
+      <p>Appointments are assigned based on the hospital's first-come-first-served queue. Slot changes and transfers are not permitted.</p>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="go('s3')" style="flex:1;font-family:'DM Sans',sans-serif;">Cancel Request</button>
+      <button class="btn btn-primary" onclick="go('s7')" style="flex:2;font-family:'DM Sans',sans-serif;">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Confirm Appointment
+      </button>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════
+     SCREEN 7 – APPOINTMENT CONFIRMATION DASHBOARD
+════════════════════════════════════════ -->
+<section id="s7" class="screen">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div>
+        <div class="sb-brand-name">SmartCare</div>
+        <div class="sb-brand-sub">Hospital System</div>
+      </div>
+    </div>
+
+    <div class="sb-patient">
+      <div class="sb-avatar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div>
+        <div class="sb-name">Rahul Sharma</div>
+        <div class="sb-id">
+          <div class="dot dot-green"></div>
+          Patient #P-0042
+        </div>
+      </div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-section-label">Main</div>
+      <div class="sb-item active">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        My Appointments
+      </div>
+      <div class="sb-item" onclick="setSbActive(this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+        Queue Status
+        <span class="badge badge-blue" style="font-size:10px;padding:3px 8px;">Live</span>
+      </div>
+      <div class="sb-item" onclick="setSbActive(this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        My Profile
+      </div>
+      <div class="sb-item" onclick="setSbActive(this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Visit History
+      </div>
+
+      <div class="sb-section-label" style="margin-top:8px;">Notifications</div>
+      <div class="sb-item" onclick="setSbActive(this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        Alerts
+        <span class="badge" style="background:#fef2f2;color:var(--red);font-size:10px;padding:3px 8px;margin-left:auto;">2</span>
+      </div>
+      <div class="sb-item" onclick="setSbActive(this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M20 12h2M2 12h2M19.07 19.07l-1.41-1.41M5.34 5.34L3.93 3.93M12 20v2M12 2v2"/></svg>
+        Settings
+      </div>
+    </nav>
+
+    <div class="sb-foot">
+      <div class="sb-item" onclick="go('s1')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign Out
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN DASHBOARD ── -->
+  <main class="dash-main">
+
+    <!-- ── FEATURE 2: REMINDER BANNER ── -->
+    <div class="notif-banner reminder-banner" id="reminderBanner">
+      <div class="notif-icon-wrap reminder-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div style="flex:1;">
+        <div class="notif-body-title" style="color:#14532d;">
+          🔔 Appointment Reminder
+        </div>
+        <div class="notif-body-text">
+          Your appointment is in <span class="notif-green">10 minutes</span>. Please proceed to <span class="notif-green">Room 3, Floor 2</span>.
+        </div>
+      </div>
+      <button class="notif-close" onclick="document.getElementById('reminderBanner').style.display='none'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- ── FEATURE 1: DOCTOR BREAK BANNER ── -->
+    <div class="notif-banner break-banner" id="breakBanner">
+      <div class="notif-icon-wrap break-icon-wrap">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div style="flex:1;">
+        <div class="notif-body-title" style="color:#92400e;">
+          ⏸ Doctor is on a short break
+        </div>
+        <div class="notif-body-text">
+          Your new estimated appointment time has been updated to <span class="notif-highlight">10:45 AM</span>. We apologise for the inconvenience.
+        </div>
+      </div>
+      <button class="notif-close" onclick="document.getElementById('breakBanner').style.display='none'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- ── DASHBOARD HEADER ── -->
+    <div class="dash-topbar">
+      <div>
+        <div class="confirmed-pill">
+          <div class="conf-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <span class="conf-text">Appointment Confirmed</span>
+        </div>
+        <h1 class="dash-greeting">Appointment Successfully Booked.</h1>
+        <p class="dash-sub">Your slot has been assigned via the FCFS queue — Thursday, 12 March 2026</p>
+      </div>
+      <div class="time-chip">
+        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="var(--blue-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span id="liveTime">08:52 AM</span>
+      </div>
+    </div>
+
+    <!-- ── STAT CARDS (4) ── -->
+    <div class="stat-grid">
+
+      <!-- Queue Number -->
+      <div class="card stat-card">
+        <div class="sc-header">
+          <span class="sc-label">Queue Number</span>
+          <div class="sc-icon-wrap" style="background:var(--blue-50);">
+            <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="var(--blue-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="var(--blue-500)"/><circle cx="3" cy="12" r="1" fill="var(--blue-500)"/><circle cx="3" cy="18" r="1" fill="var(--blue-500)"/></svg>
+          </div>
+        </div>
+        <div class="sc-value">5</div>
+        <div class="sc-sub">Current queue position</div>
+      </div>
+
+      <!-- Doctor Name -->
+      <div class="card stat-card">
+        <div class="sc-header">
+          <span class="sc-label">Doctor</span>
+          <div class="sc-icon-wrap" style="background:#ede9fe;">
+            <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 105 2H4a2 2 0 00-2 2v5a6 6 0 006 6 6 6 0 006-6V4a2 2 0 00-2-2h-1a.2.2 0 10.3.3"/><path d="M8 15v1a6 6 0 006 6 6 6 0 006-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+          </div>
+        </div>
+        <div class="sc-value" style="font-size:20px;">Dr. Sharma</div>
+        <div class="sc-sub">General Physician</div>
+      </div>
+
+      <!-- Appointment Time -->
+      <div class="card stat-card">
+        <div class="sc-header">
+          <span class="sc-label">Appointment</span>
+          <div class="sc-icon-wrap" style="background:#e0f2fe;">
+            <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+        </div>
+        <div class="sc-value" style="font-size:20px;">9:30 AM</div>
+        <div class="sc-sub">9:30 – 10:00 AM slot</div>
+      </div>
+
+      <!-- Waiting Time -->
+      <div class="card stat-card">
+        <div class="sc-header">
+          <span class="sc-label">Est. Wait</span>
+          <div class="sc-icon-wrap" style="background:var(--green-bg);">
+            <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+        </div>
+        <div class="sc-value">40 min</div>
+        <div class="sc-sub">Estimated waiting time</div>
+      </div>
+
+    </div>
+
+    <!-- ── FEATURE 1: BREAK STATUS CARD ── -->
+    <div class="break-card" id="breakCard" style="margin-bottom:22px;">
+      <div class="break-card-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:38px;height:38px;border-radius:12px;background:rgba(245,158,11,.15);display:flex;align-items:center;justify-content:center;">
+            <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;color:var(--gray-800);">Updated Appointment — Doctor Break</div>
+            <div style="font-size:13px;color:var(--gray-500);">Queue paused · Times auto-updated</div>
+          </div>
+        </div>
+        <span class="badge badge-orange">⏸ Doctor Break</span>
+      </div>
+      <div class="break-rows">
+        <div class="break-row-item">
+          <div class="bri-label">Queue Number</div>
+          <div class="bri-value">5</div>
+        </div>
+        <div class="break-row-item">
+          <div class="bri-label">Status</div>
+          <div class="bri-value" style="color:var(--amber);font-size:15px;">Queue Paused</div>
+        </div>
+        <div class="break-row-item">
+          <div class="bri-label">Previous Time</div>
+          <div class="bri-value bri-value strike">10:20 AM</div>
+        </div>
+        <div class="break-row-item">
+          <div class="bri-label">Updated Time</div>
+          <div class="bri-value bri-value updated">10:45 AM</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BOTTOM ROW ── -->
+    <div class="bottom-row" style="margin-bottom:22px;">
+
+      <!-- Queue Live Panel -->
+      <div class="card" style="animation:fadeUp .5s .3s ease both;opacity:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <div style="font-weight:700;font-size:16px;color:var(--gray-800);font-family:'Libre Baskerville',serif;">Live Queue Status</div>
+          <div class="badge badge-green" style="display:flex;align-items:center;gap:5px;">
+            <div class="dot dot-green"></div> Live
+          </div>
+        </div>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px;">4 patients ahead · Dr. Sharma · General Medicine</p>
+
+        <div class="queue-dots-wrap">
+          <div class="q-dot qd-past">1</div>
+          <div class="q-dot qd-past">2</div>
+          <div class="q-dot qd-past">3</div>
+          <div class="q-dot qd-past">4</div>
+          <div class="q-dot qd-active">5</div>
+          <div class="q-dot qd-future">6</div>
+          <div class="q-dot qd-future">7</div>
+          <div class="q-dot qd-future">8</div>
+        </div>
+
+        <div class="queue-prog-label" style="margin-top:18px;">
+          <span>Queue progress</span>
+          <b>4 of 8 patients seen</b>
+        </div>
+        <div class="prog-track-lg"><div class="prog-bar-lg"></div></div>
+
+        <div class="mini-stats">
+          <div class="mini-stat"><div class="ms-val">4</div><div class="ms-label">Ahead</div></div>
+          <div class="mini-stat"><div class="ms-val">30m</div><div class="ms-label">Avg Slot</div></div>
+          <div class="mini-stat"><div class="ms-val" style="color:var(--amber);font-size:14px;">Break</div><div class="ms-label">Dr. Status</div></div>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div style="display:flex;flex-direction:column;gap:18px;">
+
+        <!-- Appointment Detail -->
+        <div class="card" style="animation:fadeUp .5s .35s ease both;opacity:0;">
+          <div style="font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700;color:var(--gray-800);margin-bottom:14px;">Appointment Details</div>
+          <div class="detail-row">
+            <div class="det-icon"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="var(--blue-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <div><div class="det-lbl">Patient</div><div class="det-val">Rahul Sharma</div></div>
+          </div>
+          <div class="detail-row">
+            <div class="det-icon"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="var(--blue-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <div><div class="det-lbl">Time</div><div class="det-val">9:30 – 10:00 AM</div></div>
+          </div>
+          <div class="detail-row">
+            <div class="det-icon"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="var(--blue-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            <div><div class="det-lbl">Department</div><div class="det-val">General Medicine</div></div>
+          </div>
+          <div class="detail-row">
+            <div class="det-icon"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="var(--blue-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div><div class="det-lbl">Status</div><div class="det-val"><span class="badge badge-green">✓ Confirmed</span></div></div>
+          </div>
+        </div>
+
+        <!-- ── FEATURE 2: COUNTDOWN TIMER ── -->
+        <div class="card countdown-card card-sm">
+          <div style="font-family:'Libre Baskerville',serif;font-size:15px;font-weight:700;color:var(--gray-800);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="var(--blue-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Appointment Starts In
+          </div>
+          <div class="timer-circle-wrap">
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle class="timer-circle-bg" cx="60" cy="60" r="45"/>
+              <circle class="timer-circle-fg" id="timerRing" cx="60" cy="60" r="45"/>
+            </svg>
+            <div class="timer-display">
+              <div class="timer-mins" id="timerMins">09</div>
+              <div class="timer-secs" id="timerSecs">45 sec</div>
+            </div>
+          </div>
+          <div class="timer-label">Minutes until Dr. Sharma</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── FEATURE 2: ROOM INFORMATION CARD + REMINDER CARD ── -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;">
+
+      <!-- Room Info Card -->
+      <div class="card" style="animation:fadeUp .5s .4s ease both;opacity:0;">
+        <div style="font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700;color:var(--gray-800);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+          <svg class="icon-md" viewBox="0 0 24 24" fill="none" stroke="var(--blue-400)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Consultation Location
+        </div>
+        <div class="room-info-row">
+          <div class="rir-icon"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="var(--blue-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 105 2H4a2 2 0 00-2 2v5a6 6 0 006 6 6 6 0 006-6V4a2 2 0 00-2-2h-1"/><path d="M8 15v1a6 6 0 006 6 6 6 0 006-6v-4"/><circle cx="20" cy="10" r="2"/></svg></div>
+          <div><div class="rir-lbl">Doctor</div><div class="rir-val">Dr. Anita Sharma</div></div>
+        </div>
+        <div class="room-info-row">
+          <div class="rir-icon"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="var(--blue-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+          <div><div class="rir-lbl">Room Number</div><div class="rir-val">Room 3</div></div>
+        </div>
+        <div class="room-info-row">
+          <div class="rir-icon"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="var(--blue-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+          <div><div class="rir-lbl">Floor</div><div class="rir-val">Floor 2, Block B</div></div>
+        </div>
+        <div class="room-info-row">
+          <div class="rir-icon"><svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="var(--blue-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+          <div><div class="rir-lbl">Appointment Time</div><div class="rir-val">9:30 AM – 10:00 AM</div></div>
+        </div>
+      </div>
+
+      <!-- Reminder Notification Card -->
+      <div class="card" style="background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1.5px solid #bbf7d0;animation:fadeUp .5s .45s ease both;opacity:0;">
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:18px;">
+          <div style="width:44px;height:44px;border-radius:14px;background:rgba(34,197,94,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:15px;color:#14532d;margin-bottom:3px;">Appointment Reminder</div>
+            <div style="font-size:13px;color:#166534;line-height:1.6;">Your appointment is in <strong>10 minutes</strong>. Please proceed to Room 3 now.</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.7);border-radius:12px;padding:14px;border:1px solid #bbf7d0;">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#4ade80;font-weight:700;margin-bottom:8px;">Notification Channels</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:16px;">📱</span>
+              <span style="font-size:13px;color:var(--gray-700);font-weight:500;">SMS sent to +91 9XXXXX3210</span>
+              <span class="badge badge-green" style="margin-left:auto;font-size:9px;">Sent</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:16px;">✉️</span>
+              <span style="font-size:13px;color:var(--gray-700);font-weight:500;">Email to r***@gmail.com</span>
+              <span class="badge badge-green" style="margin-left:auto;font-size:9px;">Delivered</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:16px;">🔔</span>
+              <span style="font-size:13px;color:var(--gray-700);font-weight:500;">In-app push notification</span>
+              <span class="badge badge-green" style="margin-left:auto;font-size:9px;">Shown</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── FCFS SYSTEM BANNER ── -->
+    <div class="fcfs-banner">
+      <div class="fcfs-banner-icon">
+        <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="white"/><circle cx="3" cy="12" r="1" fill="white"/><circle cx="3" cy="18" r="1" fill="white"/></svg>
+      </div>
+      <div>
+        <div class="fcfs-banner-title">FCFS Queue System Active</div>
+        <div class="fcfs-banner-sub">Appointments assigned first-come-first-served. Slot changes and transfers are not permitted. Your position is secured.</div>
+      </div>
+      <div class="wait-chip">
+        <div class="wait-num">~40</div>
+        <div class="wait-lbl">min wait</div>
+      </div>
+    </div>
+
+  </main>
+</section>
+
+
+<!-- ════════════════════════════════════════
+   JAVASCRIPT
+════════════════════════════════════════ -->
+<script>
+// ── Screen navigation ──────────────────────────
+function go(id, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+  document.getElementById(id).classList.add('visible');
+  document.querySelectorAll('.snav-btn').forEach(b => b.classList.remove('active'));
+  const navBtn = btn || document.querySelector(`.snav-btn[onclick*="${id}"]`);
+  if (navBtn) navBtn.classList.add('active');
+  window.scrollTo(0, 0);
+  if (id === 's5') startProcessing();
+}
+
+// ── Sidebar active state ─────────────────────────
+function setSbActive(el) {
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── Face Scan Logic ──────────────────────────────
+let scanInterval = null;
+function startScan() {
+  const frame = document.getElementById('scanFrame');
+  const prog  = document.getElementById('scanProgress');
+  const bar   = document.getElementById('scanBar');
+  const pct   = document.getElementById('scanPct');
+  const btn   = document.getElementById('scanBtn');
+  const inner = document.getElementById('scanInner');
+  if (scanInterval) return;
+  frame.classList.add('active');
+  prog.classList.add('show');
+  btn.disabled = true; btn.textContent = 'Scanning…';
+  let p = 0;
+  scanInterval = setInterval(() => {
+    p = Math.min(p + 1.5, 100);
+    bar.style.width = p + '%';
+    pct.textContent = Math.round(p) + '%';
+    if (p >= 33) { ck(0); }
+    if (p >= 66) { ck(1); }
+    if (p >= 90) { ck(2); }
+    if (p >= 100) {
+      clearInterval(scanInterval); scanInterval = null;
+      setTimeout(() => { resetScan(); go('s5'); }, 600);
+    }
+  }, 60);
+}
+function ck(i) {
+  document.getElementById('chk'+i).classList.add('ok');
+  document.getElementById('cdot'+i).classList.add('ok');
+  document.getElementById('cdot'+i).style.background = 'var(--green)';
+}
+function resetScan() {
+  const frame = document.getElementById('scanFrame');
+  const prog  = document.getElementById('scanProgress');
+  const bar   = document.getElementById('scanBar');
+  const pct   = document.getElementById('scanPct');
+  const btn   = document.getElementById('scanBtn');
+  frame.classList.remove('active');
+  prog.classList.remove('show');
+  bar.style.width = '0'; pct.textContent = '0%';
+  btn.disabled = false; btn.innerHTML = '<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg> Start Face Scan';
+  [0,1,2].forEach(i => {
+    document.getElementById('chk'+i).classList.remove('ok');
+    document.getElementById('cdot'+i).classList.remove('ok');
+    document.getElementById('cdot'+i).style.background = '';
+  });
+}
+
+// ── Queue Processing ─────────────────────────────
+let procTimer = null;
+const STEPS = 5;
+const stepLabels = ['Verifying identity…','Checking doctor availability…','Analysing queue position…','Applying FCFS algorithm…','Assigning appointment slot…'];
+function startProcessing() {
+  if (procTimer) clearInterval(procTimer);
+  // reset
+  for (let i = 0; i < STEPS; i++) {
+    const c = document.getElementById('pc'+i);
+    const t = document.getElementById('pt'+i);
+    c.className = 'step-circle'; c.innerHTML = '';
+    t.className = 'step-txt'; t.textContent = stepLabels[i];
+  }
+  document.getElementById('pc0').classList.add('active');
+  document.getElementById('pc0').innerHTML = '<div class="step-dot-anim"></div>';
+  document.getElementById('pt0').classList.add('active');
+  let cur = 0;
+  procTimer = setInterval(() => {
+    // mark done
+    const c = document.getElementById('pc'+cur);
+    c.className = 'step-circle done';
+    c.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    document.getElementById('pt'+cur).className = 'step-txt done';
+    cur++;
+    if (cur >= STEPS) { clearInterval(procTimer); procTimer = null; setTimeout(() => go('s6'), 800); return; }
+    const nc = document.getElementById('pc'+cur);
+    nc.className = 'step-circle active';
+    nc.innerHTML = '<div class="step-dot-anim"></div>';
+    document.getElementById('pt'+cur).className = 'step-txt active';
+  }, 900);
+}
+
+// ── Live Clock ───────────────────────────────────
+function updateClock() {
+  const el = document.getElementById('liveTime');
+  if (!el) return;
+  const now = new Date();
+  let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ── Countdown Timer ──────────────────────────────
+let timerSecs = 9 * 60 + 45;
+function updateTimer() {
+  const m = Math.floor(timerSecs / 60);
+  const s = timerSecs % 60;
+  const mEl = document.getElementById('timerMins');
+  const sEl = document.getElementById('timerSecs');
+  const ring = document.getElementById('timerRing');
+  if (mEl) mEl.textContent = String(m).padStart(2, '0');
+  if (sEl) sEl.textContent = String(s).padStart(2, '0') + ' sec';
+  if (ring) {
+    const total = 10 * 60;
+    const pct   = timerSecs / total;
+    const circumference = 2 * Math.PI * 45;
+    ring.style.strokeDashoffset = circumference * (1 - pct);
+  }
+  if (timerSecs > 0) timerSecs--;
+}
+setInterval(updateTimer, 1000); updateTimer();
+
+// Close modal on overlay click
+document.getElementById('s6').addEventListener('click', function(e) {
+  if (e.target === this) go('s3');
+});
+</script>
+</body>
+</html>
